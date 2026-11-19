@@ -46,6 +46,17 @@ One-time setup:
 
 `dist/.nojekyll` is written by the build so Pages serves the output verbatim.
 
+> ⚠️ **If Pages is already enabled with "Deploy from a branch"**, it publishes the
+> repository _root_ through Jekyll — and the compiled app lives in `dist/`, which is
+> git-ignored. The site would 404. Switching the source to **GitHub Actions** (step 1)
+> is required; it is a one-click change under _Settings → Pages_ and needs no code
+> change. The same switch cannot be made through the API with a token that lacks
+> administration scope.
+>
+> If you must keep branch-based deployment, set the path to `/docs` and add a step
+> that copies `dist/` into `docs/` on `main` — but that commits build output, so the
+> Actions route is strongly preferred.
+
 ---
 
 ## 3. Vercel
