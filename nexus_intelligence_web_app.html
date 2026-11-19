@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS // AI Intelligence Platform</title>
+
+    <!-- Google Fonts: Inter for primary UI typography, JetBrains Mono for telemetry & metadata -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#070B12',
+                            900: '#0D131F',
+                            850: '#131B2C',
+                            800: '#1A2438',
+                            700: '#26344F',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-obsidian-950 dark:text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-200">
+
+    <!-- ===================================================================== -->
+    <!-- TOP COMMAND BAR                                                       -->
+    <!-- ===================================================================== -->
+    <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/85 dark:bg-obsidian-900/85 border-b border-slate-200 dark:border-obsidian-700/70">
+        <div class="max-w-full mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <!-- Left: Mobile Menu Toggle + Brand Identity -->
+            <div class="flex items-center gap-3">
+                <button id="mobileMenuBtn" type="button" aria-label="Toggle Navigation"
+                    class="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-obsidian-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div class="leading-tight">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold tracking-tight text-base sm:text-lg text-slate-900 dark:text-white">NEXUS</span>
+                            <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-semibold tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">INTEL HUB</span>
+                        </div>
+                        <p class="text-[11px] font-mono text-slate-500 dark:text-slate-400 hidden sm:block">AI Synthesis &amp; Strategic Analysis</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Telemetry Clock, Status Indicator & Theme Toggle -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 text-xs font-mono text-slate-600 dark:text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>ONLINE</span>
+                    <span class="text-slate-400 dark:text-slate-600">|</span>
+                    <span id="utcClock">--:--:-- UTC</span>
+                </div>
+
+                <button id="themeToggleBtn" type="button" aria-label="Toggle Theme"
+                    class="p-2.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-obsidian-700 border border-slate-200 dark:border-obsidian-700 transition-colors">
+                    <!-- Sun Icon (shown in dark mode) -->
+                    <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <!-- Moon Icon (shown in light mode) -->
+                    <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- MAIN WORKSPACE CONTAINER                                              -->
+    <!-- ===================================================================== -->
+    <div class="flex-1 flex relative max-w-full">
+
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-30 hidden lg:hidden"></div>
+
+        <!-- ================================================================= -->
+        <!-- LEFT NAVIGATION & DOSSIER ARCHIVE SIDEBAR                         -->
+        <!-- ================================================================= -->
+        <aside id="sidebar"
+            class="fixed lg:sticky top-16 left-0 z-30 h-[calc(100vh-4rem)] w-72 shrink-0 bg-white dark:bg-obsidian-900 border-r border-slate-200 dark:border-obsidian-700/70 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out">
+
+            <!-- Navigation Modules -->
+            <div class="p-4 space-y-1.5">
+                <p class="px-3 pb-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Intelligence Modules</p>
+
+                <button data-tab="briefing" type="button"
+                    class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                    </svg>
+                    <div>
+                        <div class="font-semibold">OSINT Briefing</div>
+                        <div class="text-[11px] opacity-75">Live Web-Grounded Intel</div>
+                    </div>
+                </button>
+
+                <button data-tab="matrix" type="button"
+                    class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                    </svg>
+                    <div>
+                        <div class="font-semibold">Signal Matrix</div>
+                        <div class="text-[11px] opacity-75">Entities, Risks &amp; SWOT</div>
+                    </div>
+                </button>
+
+                <button data-tab="visual" type="button"
+                    class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <div>
+                        <div class="font-semibold">Visual Intel</div>
+                        <div class="text-[11px] opacity-75">Image &amp; Chart Analysis</div>
+                    </div>
+                </button>
+
+                <button data-tab="comms" type="button"
+                    class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    <div>
+                        <div class="font-semibold">Analyst Comms</div>
+                        <div class="text-[11px] opacity-75">Interactive AI Officer</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Saved Dossiers Section -->
+            <div class="flex-1 flex flex-col min-h-0 border-t border-slate-200 dark:border-obsidian-700/70 p-4">
+                <div class="flex items-center justify-between px-1 mb-2">
+                    <span class="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Saved Dossiers</span>
+                    <span id="dossierCount" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300">0</span>
+                </div>
+                <div id="dossierList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Engine Footer -->
+            <div class="p-4 border-t border-slate-200 dark:border-obsidian-700/70 bg-slate-50/70 dark:bg-obsidian-950/50">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    <span>ENGINE</span>
+                    <span class="text-cyan-600 dark:text-cyan-400 font-semibold">GEMINI 3 FLASH</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ================================================================= -->
+        <!-- MAIN ACTIVE VIEWPORT                                              -->
+        <!-- ================================================================= -->
+        <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
+
+            <!-- Global Error Banner (hidden by default) -->
+            <div id="globalError" class="hidden mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <p id="globalErrorText" class="text-sm leading-relaxed"></p>
+                </div>
+                <button id="dismissErrorBtn" type="button" class="p-1 rounded-lg hover:bg-rose-500/20 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- MODULE 1: OSINT LIVE BRIEFING                                 -->
+            <!-- ============================================================= -->
+            <section id="panel-briefing" class="module-panel space-y-6">
+                <!-- Header Card -->
+                <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-semibold uppercase">Live Search Grounded</span>
+                                <span class="text-xs font-mono text-slate-400">MODULE 01</span>
+                            </div>
+                            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">OSINT Strategic Briefing</h1>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Synthesize real-time open-source intelligence with verified web citations and risk assessments.</p>
+                        </div>
+                    </div>
+
+                    <!-- Search / Query Form -->
+                    <form id="briefingForm" class="space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                </div>
+                                <input id="briefingTopic" type="text" required
+                                    placeholder="Enter a target topic, market trend, technology, or geopolitical event..."
+                                    class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all text-sm sm:text-base">
+                            </div>
+
+                            <select id="briefingFocus"
+                                class="px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-700 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                                <option value="Executive Strategic">Executive Strategic</option>
+                                <option value="Market & Competitive">Market &amp; Competitive</option>
+                                <option value="Cyber & Technical">Cyber &amp; Technical</option>
+                                <option value="Geopolitical & Regulatory">Geopolitical &amp; Regulatory</option>
+                            </select>
+
+                            <button id="generateBriefingBtn" type="submit"
+                                class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                                <span>Generate Intel</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Launch Presets -->
+                        <div class="flex flex-wrap items-center gap-2 pt-1">
+                            <span class="text-xs font-mono text-slate-400 mr-1">PRESETS:</span>
+                            <button type="button" data-preset="Global semiconductor supply chain shifts and AI chip demand"
+                                class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors">
+                                Semiconductor Supply Chain
+                            </button>
+                            <button type="button" data-preset="Latest enterprise cybersecurity threats and zero-day vulnerabilities"
+                                class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors">
+                                Cyber Threat Landscape
+                            </button>
+                            <button type="button" data-preset="Breakthroughs in grid-scale battery storage and clean energy deployment"
+                                class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors">
+                                Grid Energy Storage
+                            </button>
+                            <button type="button" data-preset="European Union AI governance and global regulatory frameworks"
+                                class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors">
+                                Global AI Regulation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Loading Skeleton (Hidden by default) -->
+                <div id="briefingLoader" class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6 text-cyan-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-white">Querying Live Intelligence Sources...</p>
+                        <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">CROSS-REFERENCING WEB SIGNALS &amp; COMPILING DOSSIER</p>
+                    </div>
+                </div>
+
+                <!-- Briefing Results Area -->
+                <div id="briefingOutput" class="hidden space-y-5">
+                    <!-- Briefing Action & Meta Header -->
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-slate-200 dark:border-obsidian-700/70">
+                            <div class="space-y-1.5">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span id="briefingBadgeFocus" class="px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 text-xs font-mono font-semibold"></span>
+                                    <span id="briefingTimestamp" class="text-xs font-mono text-slate-400"></span>
+                                </div>
+                                <h2 id="briefingResultTitle" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"></h2>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                <button id="sendToMatrixBtn" type="button"
+                                    class="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                    </svg>
+                                    <span>Extract Matrix</span>
+                                </button>
+                                <button id="saveDossierBtn" type="button"
+                                    class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                                    </svg>
+                                    <span>Save Dossier</span>
+                                </button>
+                                <button id="copyBriefingBtn" type="button"
+                                    class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>Copy</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Rendered Report Body -->
+                        <div id="briefingContent" class="pt-5 space-y-4 text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-300"></div>
+                    </div>
+
+                    <!-- Verified Grounding Citations Card -->
+                    <div id="briefingSourcesCard" class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Verified Web Grounding Sources</span>
+                            </h3>
+                            <span id="sourcesCountBadge" class="text-xs font-mono text-slate-400"></span>
+                        </div>
+                        <div id="briefingSourcesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State Guidance -->
+                <div id="briefingEmpty" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Real-Time Grounding</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">Automatically searches live web sources to ground briefings in up-to-date facts and citations.</p>
+                    </div>
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Structured Signal Matrix</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">Convert unstructured text or briefings into structured entities, threat scores, and action plans.</p>
+                    </div>
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Multimodal Visual Intel</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">Upload charts, satellite imagery, or document captures for automated data extraction and visual analysis.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- MODULE 2: SIGNAL MATRIX (STRUCTURED JSON EXTRACTION)          -->
+            <!-- ============================================================= -->
+            <section id="panel-matrix" class="module-panel hidden space-y-6">
+                <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 text-[11px] font-mono font-semibold uppercase">Structured Schema</span>
+                                <span class="text-xs font-mono text-slate-400">MODULE 02</span>
+                            </div>
+                            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Signal &amp; Entity Matrix</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Paste raw reports, transcripts, earnings calls, or field notes to extract structured intelligence telemetry.</p>
+                        </div>
+                        <button id="loadSampleTextBtn" type="button"
+                            class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 transition-colors">
+                            Load Sample Field Note
+                        </button>
+                    </div>
+
+                    <form id="matrixForm" class="space-y-4">
+                        <textarea id="matrixInput" rows="6" required
+                            placeholder="Paste raw text, news excerpts, intelligence notes, or strategic documents here..."
+                            class="w-full p-4 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"></textarea>
+
+                        <div class="flex items-center justify-between gap-3">
+                            <span id="matrixCharCount" class="text-xs font-mono text-slate-400">0 characters</span>
+                            <button id="extractMatrixBtn" type="submit"
+                                class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all disabled:opacity-60">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                </svg>
+                                <span>Extract Structured Intel</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Matrix Loader -->
+                <div id="matrixLoader" class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-3">
+                    <svg class="w-8 h-8 text-indigo-500 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="font-semibold text-slate-900 dark:text-white text-sm">Parsing Entities, Risk Vectors &amp; Strategic Signals...</p>
+                </div>
+
+                <!-- Structured Matrix Output -->
+                <div id="matrixOutput" class="hidden space-y-5">
+                    <!-- Top Telemetry KPI Strip -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <p class="text-[11px] font-mono uppercase text-slate-400">Threat / Risk Level</p>
+                            <div id="matrixThreatBadge" class="mt-2 inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold"></div>
+                        </div>
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <p class="text-[11px] font-mono uppercase text-slate-400">Overall Sentiment</p>
+                            <p id="matrixSentiment" class="mt-2 text-lg font-bold text-slate-900 dark:text-white"></p>
+                        </div>
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <p class="text-[11px] font-mono uppercase text-slate-400">Signal Confidence</p>
+                            <div class="mt-2 flex items-center gap-3">
+                                <span id="matrixConfidenceVal" class="text-lg font-bold font-mono text-cyan-600 dark:text-cyan-400"></span>
+                                <div class="flex-1 h-2 rounded-full bg-slate-200 dark:bg-obsidian-800 overflow-hidden">
+                                    <div id="matrixConfidenceBar" class="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Executive Summary Headline -->
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6">
+                        <p class="text-[11px] font-mono uppercase text-slate-400 mb-1">Assessment Headline</p>
+                        <h3 id="matrixHeadline" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white"></h3>
+                    </div>
+
+                    <!-- Entities Table / Cards -->
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6">
+                        <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Extracted Entities &amp; Actors</h3>
+                        <div id="matrixEntitiesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    </div>
+
+                    <!-- Opportunities vs Risks Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-emerald-500/20 p-5 sm:p-6">
+                            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Strengths &amp; Opportunities
+                            </h3>
+                            <ul id="matrixOpportunitiesList" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300"></ul>
+                        </div>
+
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-rose-500/20 p-5 sm:p-6">
+                            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-3 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                Risks &amp; Threat Vectors
+                            </h3>
+                            <ul id="matrixRisksList" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300"></ul>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Actions -->
+                    <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6">
+                        <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 mb-3">Actionable Recommendations</h3>
+                        <ol id="matrixActionsList" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300 list-decimal list-inside"></ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- MODULE 3: VISUAL INTEL (MULTIMODAL IMAGE ANALYSIS)            -->
+            <!-- ============================================================= -->
+            <section id="panel-visual" class="module-panel hidden space-y-6">
+                <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm">
+                    <div class="mb-5">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[11px] font-mono font-semibold uppercase">Multimodal Vision</span>
+                            <span class="text-xs font-mono text-slate-400">MODULE 03</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Visual Intelligence Analyzer</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Upload financial charts, technical diagrams, document scans, or field imagery for structured visual interrogation.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Image Dropzone -->
+                        <div class="space-y-3">
+                            <label id="dropzone" for="visualFileInput"
+                                class="flex flex-col items-center justify-center w-full min-h-[240px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-obsidian-700 bg-slate-50 dark:bg-obsidian-850 hover:border-cyan-500 dark:hover:border-cyan-500 cursor-pointer transition-colors p-6 text-center relative overflow-hidden">
+                                <div id="dropzonePlaceholder" class="space-y-2">
+                                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Click to upload or drag &amp; drop an image</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Supports PNG, JPG, WEBP (Charts, Docs, Imagery)</p>
+                                </div>
+                                <img id="visualPreviewImg" alt="Uploaded visual intelligence preview" class="hidden max-h-64 w-auto rounded-xl object-contain shadow-md">
+                                <input id="visualFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
+                            </label>
+
+                            <div id="visualFileMeta" class="hidden flex items-center justify-between px-3 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-xs font-mono text-slate-600 dark:text-slate-300">
+                                <span id="visualFileName" class="truncate"></span>
+                                <button id="clearVisualBtn" type="button" class="text-rose-500 hover:underline ml-3 shrink-0">Remove</button>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Directives -->
+                        <form id="visualForm" class="flex flex-col justify-between space-y-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="visualMode" class="block text-xs font-mono uppercase text-slate-500 dark:text-slate-400 mb-1.5">Analysis Directive</label>
+                                    <select id="visualMode"
+                                        class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                                        <option value="comprehensive">Comprehensive Visual Intelligence Brief</option>
+                                        <option value="chart">Data &amp; Chart Quantitative Extraction</option>
+                                        <option value="document">OCR &amp; Document Key Takeaways</option>
+                                        <option value="anomaly">Detail Inspection &amp; Anomaly Detection</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="visualPrompt" class="block text-xs font-mono uppercase text-slate-500 dark:text-slate-400 mb-1.5">Custom Intelligence Query (Optional)</label>
+                                    <textarea id="visualPrompt" rows="4"
+                                        placeholder="Ask specific questions about the uploaded image (e.g., 'Extract all trend metrics and identify outliers')..."
+                                        class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"></textarea>
+                                </div>
+                            </div>
+
+                            <button id="analyzeVisualBtn" type="submit" disabled
+                                class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <span>Run Visual Intelligence Scan</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Visual Analysis Loader -->
+                <div id="visualLoader" class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-3">
+                    <svg class="w-8 h-8 text-amber-500 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="font-semibold text-slate-900 dark:text-white text-sm">Analyzing Visual Features &amp; Extracting Telemetry...</p>
+                </div>
+
+                <!-- Visual Analysis Output -->
+                <div id="visualOutputCard" class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-obsidian-700/70">
+                        <h3 class="text-sm font-mono font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Visual Analysis Findings</h3>
+                        <button id="copyVisualBtn" type="button"
+                            class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors">
+                            Copy Report
+                        </button>
+                    </div>
+                    <div id="visualOutputContent" class="space-y-3 text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-300"></div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- MODULE 4: ANALYST COMMS (INTERACTIVE AI CHAT)                 -->
+            <!-- ============================================================= -->
+            <section id="panel-comms" class="module-panel hidden">
+                <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 shadow-sm flex flex-col h-[calc(100vh-8.5rem)] min-h-[520px]">
+                    <!-- Chat Header -->
+                    <div class="px-5 py-4 border-b border-slate-200 dark:border-obsidian-700/70 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                <h2 class="font-bold text-slate-900 dark:text-white text-base">Senior Intelligence Analyst</h2>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Ask strategic questions, run scenario analyses, or verify live claims.</p>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <!-- Live Search Grounding Toggle -->
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700">
+                                <input id="chatGroundingToggle" type="checkbox" checked class="w-4 h-4 rounded accent-cyan-500">
+                                <span class="text-xs font-mono font-medium text-slate-700 dark:text-slate-200">Web Grounding</span>
+                            </label>
+                            <button id="clearChatBtn" type="button"
+                                class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages Feed -->
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                        <!-- Initial System Welcome Bubble -->
+                        <div class="flex items-start gap-3 max-w-3xl">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
+                            <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                                <p class="font-semibold text-slate-900 dark:text-white mb-1">Nexus Analyst Comms Ready.</p>
+                                <p>I am ready to assist with strategic synthesis, geopolitical analysis, market comparisons, or rapid fact verification. Toggle <strong>Web Grounding</strong> anytime to anchor responses in live search citations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Bar -->
+                    <form id="chatForm" class="p-3 sm:p-4 border-t border-slate-200 dark:border-obsidian-700/70 bg-slate-50/70 dark:bg-obsidian-950/50 rounded-b-2xl">
+                        <div class="flex items-center gap-2.5">
+                            <input id="chatInput" type="text" required autocomplete="off"
+                                placeholder="Transmit inquiry to Nexus Analyst..."
+                                class="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <button id="chatSendBtn" type="submit"
+                                class="px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50 shrink-0">
+                                <span class="hidden sm:inline">Send</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TOAST NOTIFICATION CONTAINER (NO alert() USED)                        -->
+    <!-- ===================================================================== -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ===================================================================== -->
+    <!-- APPLICATION LOGIC & GEMINI API INTEGRATION                            -->
+    <!-- ===================================================================== -->
+    <script>
+        (() => {
+            // -----------------------------------------------------------------
+            // CONFIGURATION & STATE
+            // -----------------------------------------------------------------
+            const apiKey = ""; // Automatically injected at runtime when left empty
+            const GEMINI_TEXT_MODEL = "gemini-3-flash-preview";
+            const STORAGE_KEY = "nexus_intel_dossiers_v1";
+
+            const state = {
+                activeTab: "briefing",
+                currentBriefing: null, // { id, topic, focus, timestamp, rawText, sources }
+                dossiers: [],
+                visualImage: null,     // { base64, mimeType, fileName }
+                visualReportText: "",
+                chatHistory: []        // Gemini API contents format: [{ role, parts }]
+            };
+
+            // -----------------------------------------------------------------
+            // DOM ELEMENT REFERENCES
+            // -----------------------------------------------------------------
+            const els = {
+                utcClock: document.getElementById("utcClock"),
+                themeToggleBtn: document.getElementById("themeToggleBtn"),
+                mobileMenuBtn: document.getElementById("mobileMenuBtn"),
+                sidebar: document.getElementById("sidebar"),
+                sidebarBackdrop: document.getElementById("sidebarBackdrop"),
+                navTabs: document.querySelectorAll(".nav-tab"),
+                panels: document.querySelectorAll(".module-panel"),
+                globalError: document.getElementById("globalError"),
+                globalErrorText: document.getElementById("globalErrorText"),
+                dismissErrorBtn: document.getElementById("dismissErrorBtn"),
+                toastContainer: document.getElementById("toastContainer"),
+
+                // Dossiers
+                dossierList: document.getElementById("dossierList"),
+                dossierCount: document.getElementById("dossierCount"),
+
+                // Module 1: OSINT Briefing
+                briefingForm: document.getElementById("briefingForm"),
+                briefingTopic: document.getElementById("briefingTopic"),
+                briefingFocus: document.getElementById("briefingFocus"),
+                generateBriefingBtn: document.getElementById("generateBriefingBtn"),
+                presetBtns: document.querySelectorAll(".preset-btn"),
+                briefingLoader: document.getElementById("briefingLoader"),
+                briefingOutput: document.getElementById("briefingOutput"),
+                briefingEmpty: document.getElementById("briefingEmpty"),
+                briefingBadgeFocus: document.getElementById("briefingBadgeFocus"),
+                briefingTimestamp: document.getElementById("briefingTimestamp"),
+                briefingResultTitle: document.getElementById("briefingResultTitle"),
+                briefingContent: document.getElementById("briefingContent"),
+                briefingSourcesCard: document.getElementById("briefingSourcesCard"),
+                sourcesCountBadge: document.getElementById("sourcesCountBadge"),
+                briefingSourcesGrid: document.getElementById("briefingSourcesGrid"),
+                sendToMatrixBtn: document.getElementById("sendToMatrixBtn"),
+                saveDossierBtn: document.getElementById("saveDossierBtn"),
+                copyBriefingBtn: document.getElementById("copyBriefingBtn"),
+
+                // Module 2: Signal Matrix
+                matrixForm: document.getElementById("matrixForm"),
+                matrixInput: document.getElementById("matrixInput"),
+                matrixCharCount: document.getElementById("matrixCharCount"),
+                extractMatrixBtn: document.getElementById("extractMatrixBtn"),
+                loadSampleTextBtn: document.getElementById("loadSampleTextBtn"),
+                matrixLoader: document.getElementById("matrixLoader"),
+                matrixOutput: document.getElementById("matrixOutput"),
+                matrixThreatBadge: document.getElementById("matrixThreatBadge"),
+                matrixSentiment: document.getElementById("matrixSentiment"),
+                matrixConfidenceVal: document.getElementById("matrixConfidenceVal"),
+                matrixConfidenceBar: document.getElementById("matrixConfidenceBar"),
+                matrixHeadline: document.getElementById("matrixHeadline"),
+                matrixEntitiesGrid: document.getElementById("matrixEntitiesGrid"),
+                matrixOpportunitiesList: document.getElementById("matrixOpportunitiesList"),
+                matrixRisksList: document.getElementById("matrixRisksList"),
+                matrixActionsList: document.getElementById("matrixActionsList"),
+
+                // Module 3: Visual Intel
+                dropzone: document.getElementById("dropzone"),
+                dropzonePlaceholder: document.getElementById("dropzonePlaceholder"),
+                visualFileInput: document.getElementById("visualFileInput"),
+                visualPreviewImg: document.getElementById("visualPreviewImg"),
+                visualFileMeta: document.getElementById("visualFileMeta"),
+                visualFileName: document.getElementById("visualFileName"),
+                clearVisualBtn: document.getElementById("clearVisualBtn"),
+                visualForm: document.getElementById("visualForm"),
+                visualMode: document.getElementById("visualMode"),
+                visualPrompt: document.getElementById("visualPrompt"),
+                analyzeVisualBtn: document.getElementById("analyzeVisualBtn"),
+                visualLoader: document.getElementById("visualLoader"),
+                visualOutputCard: document.getElementById("visualOutputCard"),
+                visualOutputContent: document.getElementById("visualOutputContent"),
+                copyVisualBtn: document.getElementById("copyVisualBtn"),
+
+                // Module 4: Analyst Comms
+                chatForm: document.getElementById("chatForm"),
+                chatInput: document.getElementById("chatInput"),
+                chatSendBtn: document.getElementById("chatSendBtn"),
+                chatMessages: document.getElementById("chatMessages"),
+                chatGroundingToggle: document.getElementById("chatGroundingToggle"),
+                clearChatBtn: document.getElementById("clearChatBtn")
+            };
+
+            // -----------------------------------------------------------------
+            // UTILITY FUNCTIONS (Clock, Toasts, Clipboard, Safe Markdown)
+            // -----------------------------------------------------------------
+
+            /**
+             * Updates the header UTC telemetry clock every second.
+             */
+            function updateClock() {
+                const now = new Date();
+                const utcStr = now.toISOString().split("T")[1].slice(0, 8) + " UTC";
+                if (els.utcClock) els.utcClock.textContent = utcStr;
+            }
+
+            /**
+             * Displays a non-blocking toast notification (never uses alert()).
+             */
+            function showToast(message, type = "info") {
+                const toast = document.createElement("div");
+                const styles = {
+                    info: "bg-slate-900 dark:bg-obsidian-800 text-white border-cyan-500/40",
+                    success: "bg-emerald-950 text-emerald-100 border-emerald-500/40",
+                    error: "bg-rose-950 text-rose-100 border-rose-500/40"
+                };
+                toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs font-medium flex items-center gap-2 transition-all duration-300 ${styles[type] || styles.info}`;
+                toast.textContent = message;
+                els.toastContainer.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.add("opacity-0", "translate-y-2");
+                    setTimeout(() => toast.remove(), 300);
+                }, 3200);
+            }
+
+            /**
+             * Shows or clears the global error banner.
+             */
+            function showError(msg) {
+                els.globalErrorText.textContent = msg;
+                els.globalError.classList.remove("hidden");
+            }
+
+            function hideError() {
+                els.globalError.classList.add("hidden");
+            }
+
+            /**
+             * Copies text reliably inside sandboxed iFrames using document.execCommand('copy').
+             */
+            function copyToClipboard(text) {
+                try {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = text;
+                    textarea.style.position = "fixed";
+                    textarea.style.opacity = "0";
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    const success = document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                    if (success) {
+                        showToast("Intelligence report copied to clipboard.", "success");
+                    } else {
+                        showToast("Unable to copy text automatically.", "error");
+                    }
+                } catch (err) {
+                    showToast("Clipboard operation failed.", "error");
+                }
+            }
+
+            /**
+             * Escapes raw HTML entities to prevent XSS before formatting markdown.
+             */
+            function escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            /**
+             * Lightweight, safe Markdown-to-HTML renderer styled with Tailwind classes.
+             */
+            function renderMarkdown(md) {
+                if (!md) return "";
+                const lines = escapeHtml(md).split("\n");
+                let html = "";
+                let inList = false;
+
+                const formatInline = (text) => {
+                    return text
+                        .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-900 dark:text-white">$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
+                        .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-obsidian-800 font-mono text-xs text-cyan-700 dark:text-cyan-300">$1</code>');
+                };
+
+                for (let rawLine of lines) {
+                    const line = rawLine.trim();
+
+                    if (!line) {
+                        if (inList) {
+                            html += "</ul>";
+                            inList = false;
+                        }
+                        continue;
+                    }
+
+                    // Headings
+                    if (line.startsWith("### ")) {
+                        if (inList) { html += "</ul>"; inList = false; }
+                        html += `<h4 class="text-sm font-mono font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 pt-3">${formatInline(line.slice(4))}</h4>`;
+                    } else if (line.startsWith("## ")) {
+                        if (inList) { html += "</ul>"; inList = false; }
+                        html += `<h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white pt-4 pb-1 border-b border-slate-200 dark:border-obsidian-700/70">${formatInline(line.slice(3))}</h3>`;
+                    } else if (line.startsWith("# ")) {
+                        if (inList) { html += "</ul>"; inList = false; }
+                        html += `<h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white pt-3">${formatInline(line.slice(2))}</h2>`;
+                    } else if (/^[-*•]\s+/.test(line)) {
+                        if (!inList) {
+                            html += '<ul class="space-y-2 pl-5 list-disc marker:text-cyan-500">';
+                            inList = true;
+                        }
+                        html += `<li>${formatInline(line.replace(/^[-*•]\s+/, ""))}</li>`;
+                    } else if (/^\d+\.\s+/.test(line)) {
+                        if (!inList) {
+                            html += '<ul class="space-y-2 pl-5 list-decimal marker:text-cyan-500 marker:font-mono">';
+                            inList = true;
+                        }
+                        html += `<li>${formatInline(line.replace(/^\d+\.\s+/, ""))}</li>`;
+                    } else {
+                        if (inList) { html += "</ul>"; inList = false; }
+                        html += `<p class="leading-relaxed">${formatInline(line)}</p>`;
+                    }
+                }
+
+                if (inList) html += "</ul>";
+                return html;
+            }
+
+            // -----------------------------------------------------------------
+            // GEMINI API CLIENT WITH EXPONENTIAL BACKOFF
+            // -----------------------------------------------------------------
+
+            /**
+             * Executes a Gemini generateContent request with silent exponential backoff retries.
+             */
+            async function callGeminiAPI(payload, maxRetries = 4) {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${apiKey}`;
+
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            // Retry on rate limit (429) or transient server errors (5xx)
+                            if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+                                const delay = Math.pow(2, attempt) * 1000;
+                                await new Promise((r) => setTimeout(r, delay));
+                                continue;
+                            }
+                            const errorBody = await response.text();
+                            throw new Error(`API returned status ${response.status}: ${errorBody.slice(0, 180)}`);
+                        }
+
+                        const data = await response.json();
+                        return data;
+                    } catch (err) {
+                        if (attempt < maxRetries) {
+                            const delay = Math.pow(2, attempt) * 1000;
+                            await new Promise((r) => setTimeout(r, delay));
+                            continue;
+                        }
+                        throw err;
+                    }
+                }
+            }
+
+            /**
+             * Extracts grounding citation sources from Gemini's groundingMetadata.
+             */
+            function extractSources(candidate) {
+                const sources = [];
+                const seen = new Set();
+                const metadata = candidate?.groundingMetadata;
+
+                if (metadata?.groundingAttributions) {
+                    for (const attr of metadata.groundingAttributions) {
+                        const uri = attr.web?.uri;
+                        const title = attr.web?.title;
+                        if (uri && title && !seen.has(uri)) {
+                            seen.add(uri);
+                            sources.push({ uri, title });
+                        }
+                    }
+                }
+
+                // Fallback support for groundingChunks if returned by API
+                if (sources.length === 0 && metadata?.groundingChunks) {
+                    for (const chunk of metadata.groundingChunks) {
+                        const uri = chunk.web?.uri;
+                        const title = chunk.web?.title;
+                        if (uri && title && !seen.has(uri)) {
+                            seen.add(uri);
+                            sources.push({ uri, title });
+                        }
+                    }
+                }
+
+                return sources;
+            }
+
+            // -----------------------------------------------------------------
+            // NAVIGATION & THEME MANAGEMENT
+            // -----------------------------------------------------------------
+
+            function switchTab(tabName) {
+                state.activeTab = tabName;
+
+                els.panels.forEach((panel) => {
+                    panel.classList.toggle("hidden", panel.id !== `panel-${tabName}`);
+                });
+
+                els.navTabs.forEach((btn) => {
+                    const isActive = btn.dataset.tab === tabName;
+                    if (isActive) {
+                        btn.className = "nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20";
+                    } else {
+                        btn.className = "nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent";
+                    }
+                });
+
+                closeMobileSidebar();
+            }
+
+            function openMobileSidebar() {
+                els.sidebar.classList.remove("-translate-x-full");
+                els.sidebarBackdrop.classList.remove("hidden");
+            }
+
+            function closeMobileSidebar() {
+                els.sidebar.classList.add("-translate-x-full");
+                els.sidebarBackdrop.classList.add("hidden");
+            }
+
+            function toggleTheme() {
+                const html = document.documentElement;
+                const isDark = html.classList.toggle("dark");
+                try {
+                    localStorage.setItem("nexus_theme", isDark ? "dark" : "light");
+                } catch (_) {}
+            }
+
+            function initTheme() {
+                try {
+                    const saved = localStorage.getItem("nexus_theme");
+                    if (saved === "light") {
+                        document.documentElement.classList.remove("dark");
+                    } else {
+                        document.documentElement.classList.add("dark");
+                    }
+                } catch (_) {}
+            }
+
+            // -----------------------------------------------------------------
+            // SAVED DOSSIERS (LOCAL ARCHIVE)
+            // -----------------------------------------------------------------
+
+            function loadDossiers() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    state.dossiers = raw ? JSON.parse(raw) : [];
+                } catch (_) {
+                    state.dossiers = [];
+                }
+                renderDossierList();
+            }
+
+            function persistDossiers() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dossiers));
+                } catch (_) {}
+                renderDossierList();
+            }
+
+            function renderDossierList() {
+                els.dossierCount.textContent = state.dossiers.length;
+
+                if (state.dossiers.length === 0) {
+                    els.dossierList.innerHTML = `
+                        <div class="p-3 rounded-xl border border-dashed border-slate-200 dark:border-obsidian-700 text-center">
+                            <p class="text-xs text-slate-400">No archived dossiers yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                els.dossierList.innerHTML = "";
+                state.dossiers.forEach((dossier) => {
+                    const item = document.createElement("div");
+                    item.className = "group p-2.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-slate-200/80 dark:border-obsidian-700/70 transition-colors flex items-start justify-between gap-2 cursor-pointer";
+
+                    const info = document.createElement("div");
+                    info.className = "min-w-0 flex-1";
+                    info.innerHTML = `
+                        <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">${escapeHtml(dossier.topic)}</p>
+                        <p class="text-[10px] font-mono text-slate-400 mt-0.5">${escapeHtml(dossier.focus)} &middot; ${escapeHtml(dossier.timestamp)}</p>
+                    `;
+                    info.addEventListener("click", () => {
+                        state.currentBriefing = dossier;
+                        renderBriefing(dossier);
+                        switchTab("briefing");
+                        showToast("Loaded archived dossier.", "info");
+                    });
+
+                    const delBtn = document.createElement("button");
+                    delBtn.type = "button";
+                    delBtn.setAttribute("aria-label", "Delete dossier");
+                    delBtn.className = "p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 opacity-70 group-hover:opacity-100 transition-all shrink-0";
+                    delBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>`;
+                    delBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        state.dossiers = state.dossiers.filter((d) => d.id !== dossier.id);
+                        persistDossiers();
+                        showToast("Dossier removed from archive.", "info");
+                    });
+
+                    item.appendChild(info);
+                    item.appendChild(delBtn);
+                    els.dossierList.appendChild(item);
+                });
+            }
+
+            // -----------------------------------------------------------------
+            // MODULE 1: OSINT LIVE BRIEFING LOGIC
+            // -----------------------------------------------------------------
+
+            function renderBriefing(dossier) {
+                els.briefingEmpty.classList.add("hidden");
+                els.briefingOutput.classList.remove("hidden");
+
+                els.briefingBadgeFocus.textContent = dossier.focus.toUpperCase();
+                els.briefingTimestamp.textContent = dossier.timestamp;
+                els.briefingResultTitle.textContent = dossier.topic;
+                els.briefingContent.innerHTML = renderMarkdown(dossier.rawText);
+
+                // Render verified web citations
+                if (dossier.sources && dossier.sources.length > 0) {
+                    els.briefingSourcesCard.classList.remove("hidden");
+                    els.sourcesCountBadge.textContent = `${dossier.sources.length} VERIFIED`;
+                    els.briefingSourcesGrid.innerHTML = dossier.sources
+                        .map((src, idx) => `
+                            <a href="${escapeHtml(src.uri)}" target="_blank" rel="noopener noreferrer"
+                                class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 hover:bg-cyan-500/10 border border-slate-200 dark:border-obsidian-700 hover:border-cyan-500/30 transition-all group">
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 truncate">${escapeHtml(src.title)}</div>
+                                    <div class="text-[11px] font-mono text-slate-400 truncate">${escapeHtml(src.uri)}</div>
+                                </div>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-obsidian-800 text-slate-500 shrink-0">#${idx + 1}</span>
+                            </a>
+                        `)
+                        .join("");
+                } else {
+                    els.briefingSourcesCard.classList.add("hidden");
+                }
+            }
+
+            async function handleBriefingSubmit(e) {
+                e.preventDefault();
+                hideError();
+
+                const topic = els.briefingTopic.value.trim();
+                const focus = els.briefingFocus.value;
+                if (!topic) return;
+
+                els.generateBriefingBtn.disabled = true;
+                els.briefingEmpty.classList.add("hidden");
+                els.briefingOutput.classList.add("hidden");
+                els.briefingLoader.classList.remove("hidden");
+
+                const systemPrompt = `You are a senior strategic intelligence analyst at an elite global think tank.
+Produce a sharp, factual, executive-ready intelligence briefing grounded in up-to-date web search results.
+Structure your output using these exact Markdown sections:
+## Executive Summary
+## Current Situation & Key Signals
+## Risk & Opportunity Assessment
+## Strategic Implications
+## Recommended Next Actions
+Keep insights crisp, concrete, and evidence-based. Use concise bullet points where appropriate.`;
+
+                const userQuery = `Compile a ${focus} intelligence briefing on: "${topic}". Highlight the most recent developments, key actors, quantitative signals, and strategic outlook.`;
+
+                try {
+                    const payload = {
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        tools: [{ google_search: {} }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    };
+
+                    const result = await callGeminiAPI(payload);
+                    const candidate = result.candidates?.[0];
+                    const text = candidate?.content?.parts?.[0]?.text;
+
+                    if (!text) {
+                        throw new Error("No intelligence synthesis returned from the model. Please refine your query.");
+                    }
+
+                    const sources = extractSources(candidate);
+                    const now = new Date();
+                    const timestamp = now.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+
+                    const dossier = {
+                        id: "dos_" + Date.now(),
+                        topic,
+                        focus,
+                        timestamp,
+                        rawText: text,
+                        sources
+                    };
+
+                    state.currentBriefing = dossier;
+                    renderBriefing(dossier);
+                } catch (err) {
+                    showError(`Briefing generation failed: ${err.message}`);
+                    els.briefingEmpty.classList.remove("hidden");
+                } finally {
+                    els.briefingLoader.classList.add("hidden");
+                    els.generateBriefingBtn.disabled = false;
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // MODULE 2: SIGNAL MATRIX (STRUCTURED JSON EXTRACTION)
+            // -----------------------------------------------------------------
+
+            function renderMatrixResult(data) {
+                els.matrixOutput.classList.remove("hidden");
+
+                // Threat Level Badge Styling
+                const threat = (data.threatLevel || "Moderate").toUpperCase();
+                const threatStyles = {
+                    LOW: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30",
+                    MODERATE: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30",
+                    ELEVATED: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30",
+                    CRITICAL: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                };
+                els.matrixThreatBadge.className = `mt-2 inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-bold tracking-wider ${threatStyles[threat] || threatStyles.MODERATE}`;
+                els.matrixThreatBadge.textContent = threat;
+
+                // Sentiment & Confidence
+                els.matrixSentiment.textContent = data.sentiment || "Neutral";
+                const confidence = Math.max(0, Math.min(100, Math.round(Number(data.confidenceScore) || 75)));
+                els.matrixConfidenceVal.textContent = `${confidence}%`;
+                els.matrixConfidenceBar.style.width = `${confidence}%`;
+
+                // Headline
+                els.matrixHeadline.textContent = data.headline || "Structured Signal Analysis";
+
+                // Entities
+                const entities = Array.isArray(data.entities) ? data.entities : [];
+                els.matrixEntitiesGrid.innerHTML = entities.length
+                    ? entities.map((ent) => `
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700">
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <span class="font-semibold text-sm text-slate-900 dark:text-white truncate">${escapeHtml(ent.name)}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-[10px] font-mono uppercase shrink-0">${escapeHtml(ent.category)}</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${escapeHtml(ent.relevance)}</p>
+                        </div>
+                    `).join("")
+                    : `<p class="text-xs text-slate-400 col-span-full">No distinct entities detected.</p>`;
+
+                // Opportunities
+                const opps = Array.isArray(data.strengthsOrOpportunities) ? data.strengthsOrOpportunities : [];
+                els.matrixOpportunitiesList.innerHTML = opps
+                    .map((item) => `<li class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">+</span><span>${escapeHtml(item)}</span></li>`)
+                    .join("");
+
+                // Risks
+                const risks = Array.isArray(data.risksOrThreats) ? data.risksOrThreats : [];
+                els.matrixRisksList.innerHTML = risks
+                    .map((item) => `<li class="flex items-start gap-2"><span class="text-rose-500 font-bold mt-0.5">!</span><span>${escapeHtml(item)}</span></li>`)
+                    .join("");
+
+                // Action Items
+                const actions = Array.isArray(data.actionItems) ? data.actionItems : [];
+                els.matrixActionsList.innerHTML = actions
+                    .map((item) => `<li class="leading-relaxed">${escapeHtml(item)}</li>`)
+                    .join("");
+            }
+
+            async function handleMatrixSubmit(e) {
+                e.preventDefault();
+                hideError();
+
+                const sourceText = els.matrixInput.value.trim();
+                if (!sourceText) return;
+
+                els.extractMatrixBtn.disabled = true;
+                els.matrixOutput.classList.add("hidden");
+                els.matrixLoader.classList.remove("hidden");
+
+                const payload = {
+                    contents: [{
+                        parts: [{
+                            text: `Analyze the following intelligence material and extract structured strategic signals, key entities, risk/opportunity vectors, and recommended actions:\n\n${sourceText}`
+                        }]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                headline: { type: "STRING" },
+                                threatLevel: { type: "STRING", description: "One of: Low, Moderate, Elevated, Critical" },
+                                sentiment: { type: "STRING", description: "One of: Positive, Neutral, Negative, Mixed" },
+                                confidenceScore: { type: "NUMBER", description: "Confidence score from 0 to 100" },
+                                entities: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            name: { type: "STRING" },
+                                            category: { type: "STRING", description: "Organization, Person, Location, Technology, or Regulation" },
+                                            relevance: { type: "STRING" }
+                                        },
+                                        propertyOrdering: ["name", "category", "relevance"]
+                                    }
+                                },
+                                strengthsOrOpportunities: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                },
+                                risksOrThreats: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                },
+                                actionItems: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                }
+                            },
+                            propertyOrdering: [
+                                "headline",
+                                "threatLevel",
+                                "sentiment",
+                                "confidenceScore",
+                                "entities",
+                                "strengthsOrOpportunities",
+                                "risksOrThreats",
+                                "actionItems"
+                            ]
+                        }
+                    }
+                };
+
+                try {
+                    const result = await callGeminiAPI(payload);
+                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!jsonText) {
+                        throw new Error("Structured extraction returned empty data.");
+                    }
+                    const parsed = JSON.parse(jsonText);
+                    renderMatrixResult(parsed);
+                } catch (err) {
+                    showError(`Signal extraction failed: ${err.message}`);
+                } finally {
+                    els.matrixLoader.classList.add("hidden");
+                    els.extractMatrixBtn.disabled = false;
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // MODULE 3: VISUAL INTEL (IMAGE UNDERSTANDING)
+            // -----------------------------------------------------------------
+
+            function handleImageFile(file) {
+                if (!file) return;
+                const validTypes = ["image/png", "image/jpeg", "image/webp"];
+                if (!validTypes.includes(file.type)) {
+                    showToast("Please upload a PNG, JPG, or WEBP image.", "error");
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast("Image must be smaller than 10MB.", "error");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const dataUrl = evt.target.result;
+                    const base64Data = dataUrl.split(",")[1];
+                    state.visualImage = {
+                        base64: base64Data,
+                        mimeType: file.type,
+                        fileName: file.name
+                    };
+
+                    els.visualPreviewImg.src = dataUrl;
+                    els.visualPreviewImg.classList.remove("hidden");
+                    els.dropzonePlaceholder.classList.add("hidden");
+                    els.visualFileMeta.classList.remove("hidden");
+                    els.visualFileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    els.analyzeVisualBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function clearVisualImage() {
+                state.visualImage = null;
+                els.visualFileInput.value = "";
+                els.visualPreviewImg.src = "";
+                els.visualPreviewImg.classList.add("hidden");
+                els.dropzonePlaceholder.classList.remove("hidden");
+                els.visualFileMeta.classList.add("hidden");
+                els.analyzeVisualBtn.disabled = true;
+            }
+
+            async function handleVisualSubmit(e) {
+                e.preventDefault();
+                hideError();
+                if (!state.visualImage) return;
+
+                const modeDirectives = {
+                    comprehensive: "Provide a structured Visual Intelligence Briefing covering: 1) Primary Subject & Context, 2) Key Observable Details, 3) Strategic or Analytical Takeaways.",
+                    chart: "Extract all quantitative figures, axis labels, trends, inflection points, and anomalies from this chart or visual data. Summarize key insights clearly.",
+                    document: "Perform accurate text extraction (OCR) of the key sections in this document image and provide a concise executive summary of its obligations, metrics, or claims.",
+                    anomaly: "Inspect this image closely for subtle details, structural features, potential inconsistencies, risks, or notable anomalies. List observations methodically."
+                };
+
+                const customQuery = els.visualPrompt.value.trim();
+                const baseDirective = modeDirectives[els.visualMode.value] || modeDirectives.comprehensive;
+                const finalPrompt = customQuery
+                    ? `${baseDirective}\n\nSpecific Analyst Question: ${customQuery}`
+                    : baseDirective;
+
+                els.analyzeVisualBtn.disabled = true;
+                els.visualOutputCard.classList.add("hidden");
+                els.visualLoader.classList.remove("hidden");
+
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: finalPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: state.visualImage.mimeType,
+                                    data: state.visualImage.base64
+                                }
+                            }
+                        ]
+                    }]
+                };
+
+                try {
+                    const result = await callGeminiAPI(payload);
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) {
+                        throw new Error("No visual intelligence findings were returned.");
+                    }
+                    state.visualReportText = text;
+                    els.visualOutputContent.innerHTML = renderMarkdown(text);
+                    els.visualOutputCard.classList.remove("hidden");
+                } catch (err) {
+                    showError(`Visual analysis failed: ${err.message}`);
+                } finally {
+                    els.visualLoader.classList.add("hidden");
+                    els.analyzeVisualBtn.disabled = false;
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // MODULE 4: ANALYST COMMS (MULTI-TURN CHAT)
+            // -----------------------------------------------------------------
+
+            function appendChatBubble(role, content, sources = []) {
+                const wrapper = document.createElement("div");
+
+                if (role === "user") {
+                    wrapper.className = "flex justify-end";
+                    wrapper.innerHTML = `
+                        <div class="max-w-2xl rounded-2xl rounded-tr-none bg-gradient-to-r from-cyan-600 to-indigo-600 text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
+                            ${escapeHtml(content)}
+                        </div>
+                    `;
+                } else {
+                    wrapper.className = "flex items-start gap-3 max-w-3xl";
+                    let sourcesHtml = "";
+                    if (sources.length > 0) {
+                        sourcesHtml = `
+                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-obsidian-700 flex flex-wrap gap-1.5">
+                                ${sources.slice(0, 5).map((s, i) => `
+                                    <a href="${escapeHtml(s.uri)}" target="_blank" rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700 text-[11px] font-mono text-cyan-700 dark:text-cyan-300 hover:border-cyan-500 transition-colors max-w-[220px] truncate">
+                                        <span>[${i + 1}]</span>
+                                        <span class="truncate">${escapeHtml(s.title)}</span>
+                                    </a>
+                                `).join("")}
+                            </div>
+                        `;
+                    }
+                    wrapper.innerHTML = `
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
+                        <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 space-y-2 min-w-0 flex-1">
+                            ${renderMarkdown(content)}
+                            ${sourcesHtml}
+                        </div>
+                    `;
+                }
+
+                els.chatMessages.appendChild(wrapper);
+                els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+            }
+
+            function appendTypingIndicator() {
+                const div = document.createElement("div");
+                div.id = "chatTypingIndicator";
+                div.className = "flex items-start gap-3 max-w-3xl";
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
+                    <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 px-4 py-3 text-xs font-mono text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
+                        <span>Analyzing intelligence query...</span>
+                    </div>
+                `;
+                els.chatMessages.appendChild(div);
+                els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+            }
+
+            async function handleChatSubmit(e) {
+                e.preventDefault();
+                hideError();
+
+                const message = els.chatInput.value.trim();
+                if (!message) return;
+
+                els.chatInput.value = "";
+                els.chatSendBtn.disabled = true;
+
+                appendChatBubble("user", message);
+                state.chatHistory.push({ role: "user", parts: [{ text: message }] });
+                appendTypingIndicator();
+
+                const useGrounding = els.chatGroundingToggle.checked;
+                const payload = {
+                    contents: state.chatHistory,
+                    systemInstruction: {
+                        parts: [{
+                            text: "You are NEXUS, a sharp, objective senior intelligence analyst. Provide concise, deeply analytical, well-structured answers. Clearly separate confirmed facts from strategic estimates."
+                        }]
+                    }
+                };
+                if (useGrounding) {
+                    payload.tools = [{ google_search: {} }];
+                }
+
+                try {
+                    const result = await callGeminiAPI(payload);
+                    const candidate = result.candidates?.[0];
+                    const replyText = candidate?.content?.parts?.[0]?.text;
+
+                    if (!replyText) {
+                        throw new Error("Analyst response was empty.");
+                    }
+
+                    const sources = extractSources(candidate);
+                    state.chatHistory.push({ role: "model", parts: [{ text: replyText }] });
+
+                    document.getElementById("chatTypingIndicator")?.remove();
+                    appendChatBubble("model", replyText, sources);
+                } catch (err) {
+                    document.getElementById("chatTypingIndicator")?.remove();
+                    state.chatHistory.pop(); // Roll back failed turn
+                    showError(`Analyst transmission failed: ${err.message}`);
+                } finally {
+                    els.chatSendBtn.disabled = false;
+                    els.chatInput.focus();
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // EVENT LISTENERS & INITIALIZATION
+            // -----------------------------------------------------------------
+
+            function bindEvents() {
+                // Theme & Mobile Drawer
+                els.themeToggleBtn.addEventListener("click", toggleTheme);
+                els.mobileMenuBtn.addEventListener("click", () => {
+                    const isClosed = els.sidebar.classList.contains("-translate-x-full");
+                    isClosed ? openMobileSidebar() : closeMobileSidebar();
+                });
+                els.sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+                els.dismissErrorBtn.addEventListener("click", hideError);
+
+                // Tab Switching
+                els.navTabs.forEach((btn) => {
+                    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+                });
+
+                // Module 1: Briefing
+                els.briefingForm.addEventListener("submit", handleBriefingSubmit);
+                els.presetBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        els.briefingTopic.value = btn.dataset.preset;
+                        els.briefingForm.dispatchEvent(new Event("submit"));
+                    });
+                });
+
+                els.copyBriefingBtn.addEventListener("click", () => {
+                    if (!state.currentBriefing) return;
+                    const fullReport = `# ${state.currentBriefing.topic}\nFocus: ${state.currentBriefing.focus} | ${state.currentBriefing.timestamp}\n\n${state.currentBriefing.rawText}`;
+                    copyToClipboard(fullReport);
+                });
+
+                els.saveDossierBtn.addEventListener("click", () => {
+                    if (!state.currentBriefing) return;
+                    const exists = state.dossiers.some((d) => d.id === state.currentBriefing.id);
+                    if (exists) {
+                        showToast("Dossier is already in your archive.", "info");
+                        return;
+                    }
+                    state.dossiers.unshift(state.currentBriefing);
+                    persistDossiers();
+                    showToast("Dossier archived locally.", "success");
+                });
+
+                els.sendToMatrixBtn.addEventListener("click", () => {
+                    if (!state.currentBriefing) return;
+                    els.matrixInput.value = `TOPIC: ${state.currentBriefing.topic}\n\n${state.currentBriefing.rawText}`;
+                    els.matrixCharCount.textContent = `${els.matrixInput.value.length} characters`;
+                    switchTab("matrix");
+                    els.matrixForm.dispatchEvent(new Event("submit"));
+                });
+
+                // Module 2: Signal Matrix
+                els.matrixForm.addEventListener("submit", handleMatrixSubmit);
+                els.matrixInput.addEventListener("input", () => {
+                    els.matrixCharCount.textContent = `${els.matrixInput.value.length} characters`;
+                });
+                els.loadSampleTextBtn.addEventListener("click", () => {
+                    els.matrixInput.value = `FIELD REPORT // Q4 MARITIME & SEMICONDUCTOR LOGISTICS\nPort congestion across Southeast Asian transshipment hubs rose 14% month-over-month due to rerouted container traffic and seasonal weather delays. Major foundry suppliers in Taiwan and South Korea report steady wafer output, though advanced packaging lead times remain extended by 6-8 weeks. Meanwhile, European industrial automation firms are accelerating dual-sourcing agreements with North American and Japanese component manufacturers to mitigate single-corridor exposure. Regulatory audits on cross-border export controls are expected to tighten in Q1, creating compliance overhead for mid-tier logistics integrators while favoring vertically integrated Tier-1 operators.`;
+                    els.matrixCharCount.textContent = `${els.matrixInput.value.length} characters`;
+                    showToast("Sample field report loaded.", "info");
+                });
+
+                // Module 3: Visual Intel
+                els.visualFileInput.addEventListener("change", (e) => handleImageFile(e.target.files[0]));
+                els.clearVisualBtn.addEventListener("click", clearVisualImage);
+                els.visualForm.addEventListener("submit", handleVisualSubmit);
+                els.copyVisualBtn.addEventListener("click", () => {
+                    if (state.visualReportText) copyToClipboard(state.visualReportText);
+                });
+
+                // Drag & Drop support for Visual Intel
+                ["dragenter", "dragover"].forEach((evtName) => {
+                    els.dropzone.addEventListener(evtName, (e) => {
+                        e.preventDefault();
+                        els.dropzone.classList.add("border-cyan-500", "bg-cyan-500/5");
+                    });
+                });
+                ["dragleave", "drop"].forEach((evtName) => {
+                    els.dropzone.addEventListener(evtName, (e) => {
+                        e.preventDefault();
+                        els.dropzone.classList.remove("border-cyan-500", "bg-cyan-500/5");
+                    });
+                });
+                els.dropzone.addEventListener("drop", (e) => {
+                    const file = e.dataTransfer?.files?.[0];
+                    if (file) handleImageFile(file);
+                });
+
+                // Module 4: Analyst Comms
+                els.chatForm.addEventListener("submit", handleChatSubmit);
+                els.clearChatBtn.addEventListener("click", () => {
+                    state.chatHistory = [];
+                    els.chatMessages.innerHTML = `
+                        <div class="flex items-start gap-3 max-w-3xl">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
+                            <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                                <p class="font-semibold text-slate-900 dark:text-white mb-1">Session Reset.</p>
+                                <p>Ready for a fresh intelligence briefing or strategic interrogation.</p>
+                            </div>
+                        </div>
+                    `;
+                    showToast("Analyst comms cleared.", "info");
+                });
+            }
+
+            // Boot Application
+            initTheme();
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadDossiers();
+            bindEvents();
+        })();
+    </script>
+</body>
+</html>
