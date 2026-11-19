@@ -1,0 +1,27 @@
+{
+  "printWidth": 120,
+  "tabWidth": 4,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": false,
+  "quoteProps": "as-needed",
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "htmlWhitespaceSensitivity": "ignore",
+  "overrides": [
+    {
+      "files": ["*.json", "*.yml", "*.yaml", "*.md", "*.webmanifest"],
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": ["*.html"],
+      "options": {
+        "printWidth": 140
+      }
+    }
+  ]
+}

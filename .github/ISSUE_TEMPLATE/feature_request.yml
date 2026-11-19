@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a new module, capability or improvement.
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the analyst workflow that is harder than it needs to be.
+      placeholder: I compare three briefings side by side and have to keep three tabs open.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should NEXUS do? Sketch the UI or the data shape if you have one.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - New intelligence module
+        - Existing module improvement
+        - Export / reporting
+        - Design system & UI
+        - Developer experience / tooling
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about, and why they fall short.
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      description: NEXUS is deliberately a static, serverless, client-side app.
+      options:
+        - label: This can be implemented without adding a backend service.
+        - label: This does not require committing credentials to the repository.
+        - label: I have read docs/ARCHITECTURE.md and know where this would live.

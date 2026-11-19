@@ -1,0 +1,6 @@
+# NEXUS is a static client-side app; everything under the site root is public UI.
+User-agent: *
+Allow: /
+
+# Build output and source maps (when present) are not content.
+Disallow: /styles/
