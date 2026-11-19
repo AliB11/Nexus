@@ -119,7 +119,9 @@ Details in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 works at a domain root or under a sub-path.
 
 - **GitHub Pages** — `.github/workflows/pages.yml` already builds and publishes on
-  push to `main`; just set _Settings → Pages → Source: GitHub Actions_.
+  push to `main`; just set _Settings → Pages → Source: GitHub Actions_. If Pages is
+  currently on “Deploy from a branch” it would publish the repository root instead
+  of `dist/` — see the warning in [docs/DEPLOYMENT.md §2](docs/DEPLOYMENT.md#2-github-pages).
 - **Vercel / Netlify / Cloudflare Pages** — build `npm run build`, output `dist`.
 - **Any static host / nginx / S3** — same folder; serve `.js` as `text/javascript`.
 - **Your own key instead of the visitor's?** Put an edge function in front of the
