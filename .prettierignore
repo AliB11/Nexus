@@ -1,0 +1,12 @@
+# Build output & dependencies
+dist/
+node_modules/
+coverage/
+
+# Committed binaries and generated assets
+public/*.png
+public/*.ico
+assets/
+
+# Lockfiles are managed by npm
+package-lock.json

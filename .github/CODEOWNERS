@@ -1,0 +1,19 @@
+# Default owners for everything in the repository.
+# Syntax: https://docs.github.com/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+* @AliB11
+
+# Prompts are product logic — review them as carefully as code.
+/src/js/core/prompts.js @AliB11
+
+# Security-sensitive layers: output encoding, the API client and credential handling.
+/src/js/core/sanitize.js @AliB11
+/src/js/core/markdown.js @AliB11
+/src/js/api/ @AliB11
+/src/js/services/settings.js @AliB11
+/SECURITY.md @AliB11
+
+# Build, CI and release plumbing.
+/scripts/ @AliB11
+/.github/ @AliB11
+/package.json @AliB11
+/tailwind.config.js @AliB11

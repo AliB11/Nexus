@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Format · Lint · Verify · Test · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prettier (formatting)
+        run: npm run format:check
+
+      - name: ESLint (static analysis)
+        run: npm run lint
+
+      - name: Verify DOM ids, module graph and bus actions
+        run: npm run verify
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Assert that no API key is committed
+        run: |
+          if git grep -nIE "AIza[0-9A-Za-z_-]{20,}" -- ':!tests' ':!*.md' ':!docs'; then
+            echo "::error::A string that looks like a Google API key is committed to this repository."
+            echo "Rotate the key immediately, remove it from history, and read SECURITY.md."
+            exit 1
+          fi
+          echo "✓ no hard-coded credentials found"
+
+      - name: Assert the build output is complete
+        run: |
+          test -f dist/index.html
+          test -f dist/styles/main.css
+          test -f dist/js/main.js
+          test -f dist/.nojekyll
+          echo "✓ dist/ contains the entry point, compiled CSS and modules"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error

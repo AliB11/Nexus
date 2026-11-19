@@ -1,0 +1,84 @@
+name: Bug report
+description: Something in NEXUS is broken or behaves unexpectedly.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. Please search existing issues first.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear description of the problem, and what you expected instead.
+      placeholder: The Signal Matrix returns "Structured extraction returned empty data." for short inputs.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which module?
+      multiple: true
+      options:
+        - 01 · OSINT Briefing
+        - 02 · Signal Matrix
+        - 03 · Visual Intel
+        - 04 · Analyst Comms
+        - Shell (navigation, theme, archive, settings)
+        - Build / tooling
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, including the exact input where relevant.
+      placeholder: |
+        1. npm run dev
+        2. Open the Signal Matrix module
+        3. Paste a 20-character string and press Extract
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output / error banner text
+      description: Copy the exact message from the red banner and anything logged in DevTools. Never paste an API key.
+      render: text
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome / Edge (Chromium)
+        - Firefox
+        - Safari
+        - Mobile browser
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: How are you running it?
+      description: Deployment or commit you tested.
+      placeholder: "npm run dev @ main (abc1234), or https://alib11.github.io/Nexus/"
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I confirmed an API key is set (sidebar → API KEY → SET) and the model id is valid.
+          required: true
+        - label: I searched existing issues for this error message.
+          required: true
+        - label: This report contains no API keys or secrets.
+          required: true

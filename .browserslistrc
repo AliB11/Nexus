@@ -1,0 +1,10 @@
+# NEXUS ships native ES modules and modern CSS, so the target list is
+# deliberately current. Consumed by autoprefixer during `npm run build`.
+> 0.5%
+last 2 versions
+Firefox ESR
+Chrome 110
+Safari 16.4
+Edge 110
+not dead
+not op_mini all

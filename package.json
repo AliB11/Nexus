@@ -1,0 +1,54 @@
+{
+  "name": "nexus",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NEXUS — a client-side AI intelligence workspace: OSINT briefings, structured signal extraction, visual intel and analyst comms, powered by the Gemini API.",
+  "keywords": [
+    "gemini",
+    "ai",
+    "osint",
+    "intelligence",
+    "tailwindcss",
+    "vanilla-js",
+    "es-modules",
+    "static-site"
+  ],
+  "license": "MIT",
+  "author": "AliB11",
+  "homepage": "https://github.com/AliB11/Nexus#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AliB11/Nexus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AliB11/Nexus/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "start": "npm run dev",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs dist",
+    "assets": "node scripts/generate-icons.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,mjs,css,html,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,css,html,json,md,yml,yaml}\"",
+    "verify": "node scripts/verify.mjs",
+    "test": "node --test tests/*.test.js",
+    "test:watch": "node --test --watch tests/*.test.js",
+    "check": "npm run lint && npm run verify && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "jsdom": "^31.0.1",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^3.4.17"
+  }
+}

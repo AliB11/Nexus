@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>NEXUS // AI Intelligence Platform</title>
+
+        <meta
+            name="description"
+            content="NEXUS is a client-side AI intelligence workspace: web-grounded OSINT briefings, structured signal extraction, visual intelligence and an analyst chat, powered by the Gemini API."
+        />
+        <meta name="color-scheme" content="dark light" />
+        <meta name="theme-color" content="#070B12" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)" />
+
+        <!-- Open Graph / Twitter -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="NEXUS // AI Intelligence Platform" />
+        <meta
+            property="og:description"
+            content="OSINT briefings, signal extraction, visual intel and analyst comms — a static, client-side Gemini workspace."
+        />
+        <meta property="og:image" content="./og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+
+        <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+        <link rel="apple-touch-icon" href="./icon-192.png" />
+        <link rel="manifest" href="./site.webmanifest" />
+        <link rel="canonical" href="https://github.com/AliB11/Nexus" />
+
+        <!-- Google Fonts: Inter for primary UI typography, JetBrains Mono for telemetry & metadata -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Compiled Tailwind CSS (npm run build) -->
+        <link rel="stylesheet" href="./styles/main.css" />
+
+        <!-- Apply the stored theme before first paint so there is no flash of the wrong theme. -->
+        <script>
+            (function () {
+                try {
+                    var stored = localStorage.getItem("nexus_theme");
+                    var dark = stored ? stored !== "light" : true;
+                    document.documentElement.classList.toggle("dark", dark);
+                } catch (err) {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+
+        <!--
+        Optional host configuration. Define this BEFORE the module script to override
+        defaults without editing source (see src/js/config.js):
+
+        <script>window.NEXUS_CONFIG = { api: { textModel: "gemini-2.5-flash" } };</script>
+    --></head>
+    <body
+        class="bg-slate-50 text-slate-900 dark:bg-obsidian-950 dark:text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-200"
+    >
+        <noscript>
+            <div
+                class="m-4 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-sm font-medium"
+            >
+                NEXUS requires JavaScript — every module calls the Gemini API from your browser.
+            </div>
+        </noscript>
+
+        <!-- ===================================================================== -->
+        <!-- TOP COMMAND BAR                                                       -->
+        <!-- ===================================================================== -->
+        <header
+            class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/85 dark:bg-obsidian-900/85 border-b border-slate-200 dark:border-obsidian-700/70"
+        >
+            <div class="max-w-full mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
+                <!-- Left: Mobile Menu Toggle + Brand Identity -->
+                <div class="flex items-center gap-3">
+                    <button
+                        id="mobileMenuBtn"
+                        type="button"
+                        aria-label="Toggle Navigation"
+                        class="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-obsidian-700 transition-colors"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <div class="flex items-center gap-2.5">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 shrink-0"
+                        >
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                                />
+                            </svg>
+                        </div>
+                        <div class="leading-tight">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold tracking-tight text-base sm:text-lg text-slate-900 dark:text-white">NEXUS</span>
+                                <span
+                                    class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-semibold tracking-wider uppercase rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20"
+                                >
+                                    INTEL HUB
+                                </span>
+                            </div>
+                            <p class="text-[11px] font-mono text-slate-500 dark:text-slate-400 hidden sm:block">
+                                AI Synthesis &amp; Strategic Analysis
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Telemetry Clock, Status Indicator & Theme Toggle -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div
+                        class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 text-xs font-mono text-slate-600 dark:text-slate-300"
+                    >
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>ONLINE</span>
+                        <span class="text-slate-400 dark:text-slate-600">|</span>
+                        <span id="utcClock">--:--:-- UTC</span>
+                    </div>
+
+                    <button
+                        id="themeToggleBtn"
+                        type="button"
+                        aria-label="Toggle Theme"
+                        class="p-2.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-obsidian-700 border border-slate-200 dark:border-obsidian-700 transition-colors"
+                    >
+                        <!-- Sun Icon (shown in dark mode) -->
+                        <svg
+                            id="sunIcon"
+                            class="w-5 h-5 hidden dark:block"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                            />
+                        </svg>
+                        <!-- Moon Icon (shown in light mode) -->
+                        <svg
+                            id="moonIcon"
+                            class="w-5 h-5 block dark:hidden"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===================================================================== -->
+        <!-- MAIN WORKSPACE CONTAINER                                              -->
+        <!-- ===================================================================== -->
+        <div class="flex-1 flex relative max-w-full">
+            <!-- Mobile Sidebar Backdrop -->
+            <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-30 hidden lg:hidden"></div>
+
+            <!-- ================================================================= -->
+            <!-- LEFT NAVIGATION & DOSSIER ARCHIVE SIDEBAR                         -->
+            <!-- ================================================================= -->
+            <aside
+                id="sidebar"
+                class="fixed lg:sticky top-16 left-0 z-30 h-[calc(100vh-4rem)] w-72 shrink-0 bg-white dark:bg-obsidian-900 border-r border-slate-200 dark:border-obsidian-700/70 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out"
+            >
+                <!-- Navigation Modules -->
+                <div class="p-4 space-y-1.5">
+                    <p class="px-3 pb-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Intelligence Modules
+                    </p>
+
+                    <button
+                        data-tab="briefing"
+                        type="button"
+                        class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20"
+                    >
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                            />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">OSINT Briefing</div>
+                            <div class="text-[11px] opacity-75">Live Web-Grounded Intel</div>
+                        </div>
+                    </button>
+
+                    <button
+                        data-tab="matrix"
+                        type="button"
+                        class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent"
+                    >
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                            />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Signal Matrix</div>
+                            <div class="text-[11px] opacity-75">Entities, Risks &amp; SWOT</div>
+                        </div>
+                    </button>
+
+                    <button
+                        data-tab="visual"
+                        type="button"
+                        class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent"
+                    >
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Visual Intel</div>
+                            <div class="text-[11px] opacity-75">Image &amp; Chart Analysis</div>
+                        </div>
+                    </button>
+
+                    <button
+                        data-tab="comms"
+                        type="button"
+                        class="nav-tab w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800 border border-transparent"
+                    >
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                            />
+                        </svg>
+                        <div>
+                            <div class="font-semibold">Analyst Comms</div>
+                            <div class="text-[11px] opacity-75">Interactive AI Officer</div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Saved Dossiers Section -->
+                <div class="flex-1 flex flex-col min-h-0 border-t border-slate-200 dark:border-obsidian-700/70 p-4">
+                    <div class="flex items-center justify-between px-1 mb-2">
+                        <span class="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Saved Dossiers
+                        </span>
+                        <span
+                            id="dossierCount"
+                            class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300"
+                        >
+                            0
+                        </span>
+                    </div>
+                    <div id="dossierList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+                <!-- Engine Footer: active model + API key status -->
+                <div class="p-4 border-t border-slate-200 dark:border-obsidian-700/70 bg-slate-50/70 dark:bg-obsidian-950/50 space-y-2">
+                    <div class="flex items-center justify-between gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        <span>ENGINE</span>
+                        <span id="engineModelLabel" title="" class="text-cyan-600 dark:text-cyan-400 font-semibold truncate">
+                            GEMINI 3 FLASH
+                        </span>
+                    </div>
+
+                    <button
+                        id="apiKeySettingsBtn"
+                        type="button"
+                        class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 hover:border-cyan-500/40 transition-colors"
+                    >
+                        <span class="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM12 11v10m-3-3h6" />
+                            </svg>
+                            API KEY
+                        </span>
+                        <span
+                            id="apiKeyStatusChip"
+                            class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-obsidian-700 text-slate-500"
+                        >
+                            CHECKING
+                        </span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ================================================================= -->
+            <!-- MAIN ACTIVE VIEWPORT                                              -->
+            <!-- ================================================================= -->
+            <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
+                <!-- Global Error Banner (hidden by default) -->
+                <div
+                    id="globalError"
+                    class="hidden mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-start justify-between gap-3"
+                >
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                            />
+                        </svg>
+                        <p id="globalErrorText" class="text-sm leading-relaxed"></p>
+                    </div>
+                    <button id="dismissErrorBtn" type="button" class="p-1 rounded-lg hover:bg-rose-500/20 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- MODULE 1: OSINT LIVE BRIEFING                                 -->
+                <!-- ============================================================= -->
+                <section id="panel-briefing" class="module-panel space-y-6">
+                    <!-- Header Card -->
+                    <div
+                        class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm"
+                    >
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-semibold uppercase"
+                                    >
+                                        Live Search Grounded
+                                    </span>
+                                    <span class="text-xs font-mono text-slate-400">MODULE 01</span>
+                                </div>
+                                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                    OSINT Strategic Briefing
+                                </h1>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                    Synthesize real-time open-source intelligence with verified web citations and risk assessments.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Search / Query Form -->
+                        <form id="briefingForm" class="space-y-4">
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <div class="relative flex-1">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <input
+                                        id="briefingTopic"
+                                        type="text"
+                                        required
+                                        placeholder="Enter a target topic, market trend, technology, or geopolitical event..."
+                                        class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all text-sm sm:text-base"
+                                    />
+                                </div>
+
+                                <select
+                                    id="briefingFocus"
+                                    class="px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-700 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                                >
+                                    <option value="Executive Strategic">Executive Strategic</option>
+                                    <option value="Market & Competitive">Market &amp; Competitive</option>
+                                    <option value="Cyber & Technical">Cyber &amp; Technical</option>
+                                    <option value="Geopolitical & Regulatory">Geopolitical &amp; Regulatory</option>
+                                </select>
+
+                                <button
+                                    id="generateBriefingBtn"
+                                    type="submit"
+                                    class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    <span>Generate Intel</span>
+                                </button>
+                            </div>
+
+                            <!-- Quick Launch Presets -->
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <span class="text-xs font-mono text-slate-400 mr-1">PRESETS:</span>
+                                <button
+                                    type="button"
+                                    data-preset="Global semiconductor supply chain shifts and AI chip demand"
+                                    class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
+                                >
+                                    Semiconductor Supply Chain
+                                </button>
+                                <button
+                                    type="button"
+                                    data-preset="Latest enterprise cybersecurity threats and zero-day vulnerabilities"
+                                    class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
+                                >
+                                    Cyber Threat Landscape
+                                </button>
+                                <button
+                                    type="button"
+                                    data-preset="Breakthroughs in grid-scale battery storage and clean energy deployment"
+                                    class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
+                                >
+                                    Grid Energy Storage
+                                </button>
+                                <button
+                                    type="button"
+                                    data-preset="European Union AI governance and global regulatory frameworks"
+                                    class="preset-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-300 border border-slate-200 dark:border-obsidian-700 text-xs font-medium text-slate-600 dark:text-slate-300 transition-colors"
+                                >
+                                    Global AI Regulation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Loading Skeleton (Hidden by default) -->
+                    <div
+                        id="briefingLoader"
+                        class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto"
+                        >
+                            <svg class="w-6 h-6 text-cyan-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900 dark:text-white">Querying Live Intelligence Sources...</p>
+                            <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">
+                                CROSS-REFERENCING WEB SIGNALS &amp; COMPILING DOSSIER
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Briefing Results Area -->
+                    <div id="briefingOutput" class="hidden space-y-5">
+                        <!-- Briefing Action & Meta Header -->
+                        <div
+                            class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm"
+                        >
+                            <div
+                                class="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-slate-200 dark:border-obsidian-700/70"
+                            >
+                                <div class="space-y-1.5">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span
+                                            id="briefingBadgeFocus"
+                                            class="px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 text-xs font-mono font-semibold"
+                                        ></span>
+                                        <span id="briefingTimestamp" class="text-xs font-mono text-slate-400"></span>
+                                    </div>
+                                    <h2 id="briefingResultTitle" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"></h2>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                    <button
+                                        id="sendToMatrixBtn"
+                                        type="button"
+                                        class="px-3.5 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                                            />
+                                        </svg>
+                                        <span>Extract Matrix</span>
+                                    </button>
+                                    <button
+                                        id="saveDossierBtn"
+                                        type="button"
+                                        class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                            />
+                                        </svg>
+                                        <span>Save Dossier</span>
+                                    </button>
+                                    <button
+                                        id="copyBriefingBtn"
+                                        type="button"
+                                        class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                            />
+                                        </svg>
+                                        <span>Copy</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Rendered Report Body -->
+                            <div
+                                id="briefingContent"
+                                class="pt-5 space-y-4 text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-300"
+                            ></div>
+                        </div>
+
+                        <!-- Verified Grounding Citations Card -->
+                        <div
+                            id="briefingSourcesCard"
+                            class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm"
+                        >
+                            <div class="flex items-center justify-between mb-3">
+                                <h3
+                                    class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4 text-emerald-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                    <span>Verified Web Grounding Sources</span>
+                                </h3>
+                                <span id="sourcesCountBadge" class="text-xs font-mono text-slate-400"></span>
+                            </div>
+                            <div id="briefingSourcesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State Guidance -->
+                    <div id="briefingEmpty" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Real-Time Grounding</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                                Automatically searches live web sources to ground briefings in up-to-date facts and citations.
+                            </p>
+                        </div>
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Structured Signal Matrix</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                                Convert unstructured text or briefings into structured entities, threat scores, and action plans.
+                            </p>
+                        </div>
+                        <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 dark:text-white text-sm">Multimodal Visual Intel</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                                Upload charts, satellite imagery, or document captures for automated data extraction and visual analysis.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- MODULE 2: SIGNAL MATRIX (STRUCTURED JSON EXTRACTION)          -->
+                <!-- ============================================================= -->
+                <section id="panel-matrix" class="module-panel hidden space-y-6">
+                    <div
+                        class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span
+                                        class="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 text-[11px] font-mono font-semibold uppercase"
+                                    >
+                                        Structured Schema
+                                    </span>
+                                    <span class="text-xs font-mono text-slate-400">MODULE 02</span>
+                                </div>
+                                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                    Signal &amp; Entity Matrix
+                                </h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                    Paste raw reports, transcripts, earnings calls, or field notes to extract structured intelligence
+                                    telemetry.
+                                </p>
+                            </div>
+                            <button
+                                id="loadSampleTextBtn"
+                                type="button"
+                                class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-obsidian-700 transition-colors"
+                            >
+                                Load Sample Field Note
+                            </button>
+                        </div>
+
+                        <form id="matrixForm" class="space-y-4">
+                            <textarea
+                                id="matrixInput"
+                                rows="6"
+                                required
+                                placeholder="Paste raw text, news excerpts, intelligence notes, or strategic documents here..."
+                                class="w-full p-4 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                            ></textarea>
+
+                            <div class="flex items-center justify-between gap-3">
+                                <span id="matrixCharCount" class="text-xs font-mono text-slate-400">0 characters</span>
+                                <button
+                                    id="extractMatrixBtn"
+                                    type="submit"
+                                    class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all disabled:opacity-60"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                                        />
+                                    </svg>
+                                    <span>Extract Structured Intel</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Matrix Loader -->
+                    <div
+                        id="matrixLoader"
+                        class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-3"
+                    >
+                        <svg class="w-8 h-8 text-indigo-500 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p class="font-semibold text-slate-900 dark:text-white text-sm">
+                            Parsing Entities, Risk Vectors &amp; Strategic Signals...
+                        </p>
+                    </div>
+
+                    <!-- Structured Matrix Output -->
+                    <div id="matrixOutput" class="hidden space-y-5">
+                        <!-- Top Telemetry KPI Strip -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                                <p class="text-[11px] font-mono uppercase text-slate-400">Threat / Risk Level</p>
+                                <div
+                                    id="matrixThreatBadge"
+                                    class="mt-2 inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold"
+                                ></div>
+                            </div>
+                            <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                                <p class="text-[11px] font-mono uppercase text-slate-400">Overall Sentiment</p>
+                                <p id="matrixSentiment" class="mt-2 text-lg font-bold text-slate-900 dark:text-white"></p>
+                            </div>
+                            <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5">
+                                <p class="text-[11px] font-mono uppercase text-slate-400">Signal Confidence</p>
+                                <div class="mt-2 flex items-center gap-3">
+                                    <span
+                                        id="matrixConfidenceVal"
+                                        class="text-lg font-bold font-mono text-cyan-600 dark:text-cyan-400"
+                                    ></span>
+                                    <div class="flex-1 h-2 rounded-full bg-slate-200 dark:bg-obsidian-800 overflow-hidden">
+                                        <div
+                                            id="matrixConfidenceBar"
+                                            class="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full transition-all duration-500"
+                                            style="width: 0%"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Executive Summary Headline -->
+                        <div
+                            class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6"
+                        >
+                            <p class="text-[11px] font-mono uppercase text-slate-400 mb-1">Assessment Headline</p>
+                            <h3 id="matrixHeadline" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white"></h3>
+                        </div>
+
+                        <!-- Entities Table / Cards -->
+                        <div
+                            class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6"
+                        >
+                            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                                Extracted Entities &amp; Actors
+                            </h3>
+                            <div id="matrixEntitiesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                        </div>
+
+                        <!-- Opportunities vs Risks Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-emerald-500/20 p-5 sm:p-6">
+                                <h3
+                                    class="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-2"
+                                >
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    Strengths &amp; Opportunities
+                                </h3>
+                                <ul id="matrixOpportunitiesList" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300"></ul>
+                            </div>
+
+                            <div class="rounded-2xl bg-white dark:bg-obsidian-900 border border-rose-500/20 p-5 sm:p-6">
+                                <h3
+                                    class="text-xs font-mono font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-3 flex items-center gap-2"
+                                >
+                                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                    Risks &amp; Threat Vectors
+                                </h3>
+                                <ul id="matrixRisksList" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300"></ul>
+                            </div>
+                        </div>
+
+                        <!-- Recommended Actions -->
+                        <div
+                            class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6"
+                        >
+                            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 mb-3">
+                                Actionable Recommendations
+                            </h3>
+                            <ol
+                                id="matrixActionsList"
+                                class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300 list-decimal list-inside"
+                            ></ol>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- MODULE 3: VISUAL INTEL (MULTIMODAL IMAGE ANALYSIS)            -->
+                <!-- ============================================================= -->
+                <section id="panel-visual" class="module-panel hidden space-y-6">
+                    <div
+                        class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm"
+                    >
+                        <div class="mb-5">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span
+                                    class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[11px] font-mono font-semibold uppercase"
+                                >
+                                    Multimodal Vision
+                                </span>
+                                <span class="text-xs font-mono text-slate-400">MODULE 03</span>
+                            </div>
+                            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                Visual Intelligence Analyzer
+                            </h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                Upload financial charts, technical diagrams, document scans, or field imagery for structured visual
+                                interrogation.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Image Dropzone -->
+                            <div class="space-y-3">
+                                <label
+                                    id="dropzone"
+                                    for="visualFileInput"
+                                    class="flex flex-col items-center justify-center w-full min-h-[240px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-obsidian-700 bg-slate-50 dark:bg-obsidian-850 hover:border-cyan-500 dark:hover:border-cyan-500 cursor-pointer transition-colors p-6 text-center relative overflow-hidden"
+                                >
+                                    <div id="dropzonePlaceholder" class="space-y-2">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto"
+                                        >
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                            Click to upload or drag &amp; drop an image
+                                        </p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                                            Supports PNG, JPG, WEBP (Charts, Docs, Imagery)
+                                        </p>
+                                    </div>
+                                    <img
+                                        id="visualPreviewImg"
+                                        alt="Uploaded visual intelligence preview"
+                                        class="hidden max-h-64 w-auto rounded-xl object-contain shadow-md"
+                                    />
+                                    <input id="visualFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+                                </label>
+
+                                <div
+                                    id="visualFileMeta"
+                                    class="hidden flex items-center justify-between px-3 py-2 rounded-xl bg-slate-100 dark:bg-obsidian-800 text-xs font-mono text-slate-600 dark:text-slate-300"
+                                >
+                                    <span id="visualFileName" class="truncate"></span>
+                                    <button id="clearVisualBtn" type="button" class="text-rose-500 hover:underline ml-3 shrink-0">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Analysis Directives -->
+                            <form id="visualForm" class="flex flex-col justify-between space-y-4">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label
+                                            for="visualMode"
+                                            class="block text-xs font-mono uppercase text-slate-500 dark:text-slate-400 mb-1.5"
+                                        >
+                                            Analysis Directive
+                                        </label>
+                                        <select
+                                            id="visualMode"
+                                            class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                                        >
+                                            <option value="comprehensive">Comprehensive Visual Intelligence Brief</option>
+                                            <option value="chart">Data &amp; Chart Quantitative Extraction</option>
+                                            <option value="document">OCR &amp; Document Key Takeaways</option>
+                                            <option value="anomaly">Detail Inspection &amp; Anomaly Detection</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            for="visualPrompt"
+                                            class="block text-xs font-mono uppercase text-slate-500 dark:text-slate-400 mb-1.5"
+                                        >
+                                            Custom Intelligence Query (Optional)
+                                        </label>
+                                        <textarea
+                                            id="visualPrompt"
+                                            rows="4"
+                                            placeholder="Ask specific questions about the uploaded image (e.g., 'Extract all trend metrics and identify outliers')..."
+                                            class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                                        ></textarea>
+                                    </div>
+                                </div>
+
+                                <button
+                                    id="analyzeVisualBtn"
+                                    type="submit"
+                                    disabled
+                                    class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                        />
+                                    </svg>
+                                    <span>Run Visual Intelligence Scan</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Visual Analysis Loader -->
+                    <div
+                        id="visualLoader"
+                        class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-8 text-center space-y-3"
+                    >
+                        <svg class="w-8 h-8 text-amber-500 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p class="font-semibold text-slate-900 dark:text-white text-sm">
+                            Analyzing Visual Features &amp; Extracting Telemetry...
+                        </p>
+                    </div>
+
+                    <!-- Visual Analysis Output -->
+                    <div
+                        id="visualOutputCard"
+                        class="hidden rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 p-5 sm:p-6 shadow-sm space-y-4"
+                    >
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-obsidian-700/70">
+                            <h3 class="text-sm font-mono font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                Visual Analysis Findings
+                            </h3>
+                            <button
+                                id="copyVisualBtn"
+                                type="button"
+                                class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-obsidian-800 hover:bg-slate-200 dark:hover:bg-obsidian-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+                            >
+                                Copy Report
+                            </button>
+                        </div>
+                        <div
+                            id="visualOutputContent"
+                            class="space-y-3 text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-300"
+                        ></div>
+                    </div>
+                </section>
+
+                <!-- ============================================================= -->
+                <!-- MODULE 4: ANALYST COMMS (INTERACTIVE AI CHAT)                 -->
+                <!-- ============================================================= -->
+                <section id="panel-comms" class="module-panel hidden">
+                    <div
+                        class="rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700/70 shadow-sm flex flex-col h-[calc(100vh-8.5rem)] min-h-[520px]"
+                    >
+                        <!-- Chat Header -->
+                        <div
+                            class="px-5 py-4 border-b border-slate-200 dark:border-obsidian-700/70 flex flex-wrap items-center justify-between gap-3"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <h2 class="font-bold text-slate-900 dark:text-white text-base">Senior Intelligence Analyst</h2>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Ask strategic questions, run scenario analyses, or verify live claims.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <!-- Live Search Grounding Toggle -->
+                                <label
+                                    class="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700"
+                                >
+                                    <input id="chatGroundingToggle" type="checkbox" checked class="w-4 h-4 rounded accent-cyan-500" />
+                                    <span class="text-xs font-mono font-medium text-slate-700 dark:text-slate-200">Web Grounding</span>
+                                </label>
+                                <button
+                                    id="clearChatBtn"
+                                    type="button"
+                                    class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Messages Feed -->
+                        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                            <!-- Initial System Welcome Bubble -->
+                            <div class="flex items-start gap-3 max-w-3xl">
+                                <div
+                                    class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                >
+                                    NX
+                                </div>
+                                <div
+                                    class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed"
+                                >
+                                    <p class="font-semibold text-slate-900 dark:text-white mb-1">Nexus Analyst Comms Ready.</p>
+                                    <p>
+                                        I am ready to assist with strategic synthesis, geopolitical analysis, market comparisons, or rapid
+                                        fact verification. Toggle
+                                        <strong>Web Grounding</strong>
+                                        anytime to anchor responses in live search citations.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Bar -->
+                        <form
+                            id="chatForm"
+                            class="p-3 sm:p-4 border-t border-slate-200 dark:border-obsidian-700/70 bg-slate-50/70 dark:bg-obsidian-950/50 rounded-b-2xl"
+                        >
+                            <div class="flex items-center gap-2.5">
+                                <input
+                                    id="chatInput"
+                                    type="text"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="Transmit inquiry to Nexus Analyst..."
+                                    class="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                                />
+                                <button
+                                    id="chatSendBtn"
+                                    type="submit"
+                                    class="px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm flex items-center gap-2 transition-colors disabled:opacity-50 shrink-0"
+                                >
+                                    <span class="hidden sm:inline">Send</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- TOAST NOTIFICATION CONTAINER (NO alert() USED)                        -->
+        <!-- ===================================================================== -->
+        <!-- ===================================================================== -->
+        <!-- ENGINE SETTINGS DIALOG (API key + model)                              -->
+        <!-- ===================================================================== -->
+        <div id="apiKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div id="apiKeyModalBackdrop" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+
+            <div
+                id="apiKeyModalCard"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="apiKeyModalTitle"
+                class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700 shadow-2xl p-5 sm:p-6 space-y-4"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-[11px] font-mono font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 mb-1">
+                            Engine Credentials
+                        </p>
+                        <h2 id="apiKeyModalTitle" class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                            Connect the Gemini API
+                        </h2>
+                    </div>
+                    <button
+                        id="apiKeyCancelBtn"
+                        type="button"
+                        aria-label="Close settings"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-obsidian-800 transition-colors shrink-0"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    NEXUS is a static app: your browser calls the Gemini API directly. The key is stored only in this browser's
+                    <span class="font-mono">localStorage</span>
+                    and is sent only to
+                    <span class="font-mono">generativelanguage.googleapis.com</span>
+                    . Create a free key in
+                    <a
+                        href="https://aistudio.google.com/app/apikey"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-cyan-600 dark:text-cyan-400 hover:underline font-medium"
+                    >
+                        Google AI Studio
+                    </a>
+                    .
+                </p>
+
+                <div>
+                    <label
+                        for="apiKeyInput"
+                        class="block text-xs font-mono uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5"
+                    >
+                        Gemini API Key
+                    </label>
+                    <input
+                        id="apiKeyInput"
+                        type="password"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="AIza…"
+                        class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white font-mono text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all disabled:opacity-60"
+                    />
+                    <p id="apiKeyModalHint" class="mt-1.5 text-[11px] font-mono leading-relaxed text-slate-400 dark:text-slate-500"></p>
+                </div>
+
+                <div>
+                    <label
+                        for="apiKeyModelInput"
+                        class="block text-xs font-mono uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5"
+                    >
+                        Model
+                    </label>
+                    <input
+                        id="apiKeyModelInput"
+                        type="text"
+                        spellcheck="false"
+                        placeholder="gemini-3-flash-preview"
+                        class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white font-mono text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
+                    />
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <button
+                        id="apiKeyClearBtn"
+                        type="button"
+                        class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        Remove key
+                    </button>
+                    <button
+                        id="apiKeySaveBtn"
+                        type="button"
+                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition-all"
+                    >
+                        Save &amp; Connect
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- ===================================================================== -->
+        <!-- APPLICATION LOGIC & GEMINI API INTEGRATION                            -->
+        <!-- Loaded as ES modules: config → core → services → modules → main       -->
+        <!-- ===================================================================== -->
+        <script type="module" src="./js/main.js"></script>
+    </body>
+</html>
