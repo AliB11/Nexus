@@ -39,7 +39,7 @@ function legacyCopy(text) {
  * @param {string} [successMessage]
  * @returns {Promise<boolean>}
  */
-export async function copyToClipboard(text, successMessage = "Intelligence report copied to clipboard.") {
+export async function copyToClipboard(text, successMessage = "گزارش اطلاعاتی در حافظهٔ موقت کپی شد.") {
     if (!text) return false;
 
     let ok = false;
@@ -53,6 +53,6 @@ export async function copyToClipboard(text, successMessage = "Intelligence repor
     }
     if (!ok) ok = legacyCopy(text);
 
-    showToast(ok ? successMessage : "Unable to copy text automatically.", ok ? "success" : "error");
+    showToast(ok ? successMessage : "کپی خودکار متن ممکن نشد.", ok ? "success" : "error");
     return ok;
 }

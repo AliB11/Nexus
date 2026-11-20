@@ -4,6 +4,11 @@
  * A multi-turn conversation with the NEXUS analyst persona. Google Search
  * grounding is optional per message; failed turns are rolled back so the
  * transcript never desynchronises from the server-side history.
+ *
+ * DIRECTION: the document is RTL, so `justify-end` puts the analyst's own
+ * messages on the inline-end (visually the left) and the assistant's bubbles on
+ * the inline-start — the conventional Persian chat layout. Bubble corners use the
+ * logical `rounded-ss-*` / `rounded-se-*` utilities so they follow the text.
  */
 import { config } from "../config.js";
 import { els } from "../core/dom.js";
@@ -16,7 +21,7 @@ import { blockReason, extractSources, firstText } from "../api/gemini.js";
 import { ANALYST_SYSTEM_PROMPT } from "../core/prompts.js";
 import { trimChatHistory } from "../core/history.js";
 
-/** The live "analyzing…" bubble, or `null` when no request is in flight. */
+/** The live «در حال تحلیل…» bubble, or `null` when no request is in flight. */
 let typingIndicator = null;
 
 /**
@@ -42,7 +47,7 @@ export function appendChatBubble(role, content, sources = []) {
     if (role === "user") {
         wrapper.className = "flex justify-end";
         wrapper.innerHTML = `
-            <div class="max-w-2xl rounded-2xl rounded-tr-none bg-gradient-to-r from-cyan-600 to-indigo-600 text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
+            <div class="max-w-2xl rounded-2xl rounded-se-none bg-gradient-to-r from-cyan-600 to-indigo-600 text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
                 ${escapeHtml(content)}
             </div>
         `;
@@ -58,7 +63,7 @@ export function appendChatBubble(role, content, sources = []) {
                             (s, i) => `
                         <a href="${safeUrl(s.uri)}" target="_blank" rel="noopener noreferrer"
                             class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-obsidian-700 text-[11px] font-mono text-cyan-700 dark:text-cyan-300 hover:border-cyan-500 transition-colors max-w-[220px] truncate">
-                            <span>[${i + 1}]</span>
+                            <span dir="ltr">[${i + 1}]</span>
                             <span class="truncate">${escapeHtml(s.title)}</span>
                         </a>
                     `
@@ -69,7 +74,7 @@ export function appendChatBubble(role, content, sources = []) {
         }
         wrapper.innerHTML = `
             <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
-            <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 space-y-2 min-w-0 flex-1">
+            <div class="rounded-2xl rounded-ss-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 space-y-2 min-w-0 flex-1">
                 ${renderMarkdown(content)}
                 ${sourcesHtml}
             </div>
@@ -88,14 +93,29 @@ export function appendTypingIndicator() {
     div.className = "flex items-start gap-3 max-w-3xl";
     div.innerHTML = `
         <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
-        <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 px-4 py-3 text-xs font-mono text-slate-500 dark:text-slate-400 flex items-center gap-2">
+        <div class="rounded-2xl rounded-ss-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 px-4 py-3 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
-            <span>Analyzing intelligence query...</span>
+            <span>در حال تحلیل پرسش اطلاعاتی…</span>
         </div>
     `;
     els.chatMessages.appendChild(div);
     els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
     typingIndicator = div;
+}
+
+/**
+ * Replaces the transcript with the greeting bubble (used on reset and on boot).
+ */
+function renderWelcomeBubble(title, body) {
+    els.chatMessages.innerHTML = `
+        <div class="flex items-start gap-3 max-w-3xl">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
+            <div class="rounded-2xl rounded-ss-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                <p class="font-semibold text-slate-900 dark:text-white mb-1">${escapeHtml(title)}</p>
+                <p>${body}</p>
+            </div>
+        </div>
+    `;
 }
 
 export async function handleChatSubmit(e) {
@@ -134,11 +154,7 @@ export async function handleChatSubmit(e) {
 
         if (!replyText) {
             const blocked = blockReason(result);
-            throw new Error(
-                blocked
-                    ? `The analyst response was blocked (finish reason: ${blocked}).`
-                    : "Analyst response was empty."
-            );
+            throw new Error(blocked ? `پاسخ تحلیل‌گر مسدود شد (دلیل پایان: ${blocked}).` : "پاسخ تحلیل‌گر خالی بود.");
         }
 
         const sources = extractSources(candidate);
@@ -150,7 +166,7 @@ export async function handleChatSubmit(e) {
     } catch (err) {
         removeTypingIndicator();
         state.chatHistory.pop(); // Roll back failed turn
-        showError(`Analyst transmission failed: ${err.message}`);
+        showError(`ارسال پیام به تحلیل‌گر ناموفق بود: ${err.message}`);
     } finally {
         els.chatSendBtn.disabled = false;
         els.chatInput.focus();
@@ -163,16 +179,11 @@ export async function handleChatSubmit(e) {
 export function initComms() {
     els.chatForm.addEventListener("submit", handleChatSubmit);
     els.clearChatBtn.addEventListener("click", () => {
+        // Drop any bubble still in flight first, otherwise the pending request
+        // would re-attach a typing indicator to a transcript the user just reset.
+        removeTypingIndicator();
         state.chatHistory = [];
-        els.chatMessages.innerHTML = `
-            <div class="flex items-start gap-3 max-w-3xl">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">NX</div>
-                <div class="rounded-2xl rounded-tl-none bg-slate-100 dark:bg-obsidian-800 border border-slate-200 dark:border-obsidian-700 p-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
-                    <p class="font-semibold text-slate-900 dark:text-white mb-1">Session Reset.</p>
-                    <p>Ready for a fresh intelligence briefing or strategic interrogation.</p>
-                </div>
-            </div>
-        `;
-        showToast("Analyst comms cleared.", "info");
+        renderWelcomeBubble("گفت‌وگو بازنشانی شد.", "آمادهٔ یک بریفینگ اطلاعاتی تازه یا وارسی راهبردی.");
+        showToast("گفت‌وگو با تحلیل‌گر پاک شد.", "info");
     });
 }

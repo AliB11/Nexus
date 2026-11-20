@@ -14,15 +14,15 @@ import { copyToClipboard } from "../core/clipboard.js";
 import { hideError, showError, showToast } from "../core/toast.js";
 import { blockReason, firstText } from "../api/gemini.js";
 import { buildVisualPrompt } from "../core/prompts.js";
-import { formatFileSize } from "../core/format.js";
+import { formatFileSize, formatMaxImageSize } from "../core/format.js";
 export function handleImageFile(file) {
     if (!file) return;
     if (!config.limits.imageMimeTypes.includes(file.type)) {
-        showToast("Please upload a PNG, JPG, or WEBP image.", "error");
+        showToast("لطفاً تصویری با قالب PNG، JPG یا WEBP بارگذاری کنید.", "error");
         return;
     }
     if (file.size > config.limits.imageMaxBytes) {
-        showToast(`Image must be smaller than ${Math.round(config.limits.imageMaxBytes / (1024 * 1024))}MB.`, "error");
+        showToast(formatMaxImageSize(config.limits.imageMaxBytes), "error");
         return;
     }
 
@@ -94,15 +94,15 @@ export async function handleVisualSubmit(e) {
             const blocked = blockReason(result);
             throw new Error(
                 blocked
-                    ? `The model blocked this image analysis (finish reason: ${blocked}).`
-                    : "No visual intelligence findings were returned."
+                    ? `مدل این تحلیل تصویر را مسدود کرد (دلیل پایان: ${blocked}).`
+                    : "هیچ یافتهٔ اطلاعات بصری برگردانده نشد."
             );
         }
         state.visualReportText = text;
         els.visualOutputContent.innerHTML = renderMarkdown(text);
         els.visualOutputCard.classList.remove("hidden");
     } catch (err) {
-        showError(`Visual analysis failed: ${err.message}`);
+        showError(`تحلیل بصری ناموفق بود: ${err.message}`);
     } finally {
         els.visualLoader.classList.add("hidden");
         els.analyzeVisualBtn.disabled = false;

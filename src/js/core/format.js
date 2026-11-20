@@ -3,11 +3,37 @@
  *
  * Pure functions only — no DOM, no state — so they are trivially unit-testable
  * (`tests/format.test.js`) and reusable from any module.
+ *
+ * LANGUAGE: user-facing counters are rendered with Persian digits (`fa-IR`),
+ * because the whole UI is Persian. Values that are *data* rather than copy —
+ * the UTC clock, briefing timestamps, file sizes handed to the model — stay in
+ * their Latin technical form and are marked `dir="ltr"` in the markup.
  */
+
+/** Locale used for every human-facing number. */
+const NUMBER_LOCALE = "fa-IR";
+
+/**
+ * Formats a number with Persian digits and locale grouping.
+ * @param {number} value
+ * @returns {string}
+ */
+export function formatNumber(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "۰";
+    try {
+        return n.toLocaleString(NUMBER_LOCALE);
+    } catch {
+        // A runtime without fa-IR locale data: fall back to plain digits.
+        return String(n);
+    }
+}
 
 /**
  * Turns a model id into a compact display label:
  * `gemini-3-flash-preview` → `GEMINI 3 FLASH`.
+ *
+ * Model ids are Latin by definition, so this stays upper-cased ASCII.
  *
  * @param {string} model
  * @returns {string}
@@ -23,6 +49,9 @@ export function formatModelLabel(model) {
 
 /**
  * Timestamp used on briefings and archived dossiers: `2026-11-19 23:15 UTC`.
+ *
+ * Kept in ISO-ish Latin form on purpose: it is archived data, and Persian digits
+ * would make the stored dossiers harder to sort and compare.
  *
  * @param {Date} [date]
  * @returns {string}
@@ -43,6 +72,8 @@ export function formatUtcClock(date = new Date()) {
 
 /**
  * Human-readable byte size, e.g. `1536` → `1.5 KB`.
+ *
+ * Unit symbols stay Latin (`KB`, `MB`) — they are international abbreviations.
  *
  * @param {number} bytes
  * @returns {string}
@@ -65,8 +96,19 @@ export function formatFileSize(bytes) {
  * Character counter label under the Signal Matrix textarea.
  *
  * @param {number} count
- * @returns {string}
+ * @returns {string} e.g. `۱٬۲۳۴ نویسه`
  */
 export function formatCharacterCount(count) {
-    return `${count} characters`;
+    return `${formatNumber(count)} نویسه`;
+}
+
+/**
+ * Size limit sentence for the Visual Intel uploader.
+ *
+ * @param {number} maxBytes
+ * @returns {string} e.g. `حجم تصویر باید کمتر از ۱۰ مگابایت باشد.`
+ */
+export function formatMaxImageSize(maxBytes) {
+    const mb = Math.round(Number(maxBytes) / (1024 * 1024));
+    return `حجم تصویر باید کمتر از ${formatNumber(mb)} مگابایت باشد.`;
 }

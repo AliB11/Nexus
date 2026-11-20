@@ -69,7 +69,7 @@ export function createGeminiClient(options = {}) {
         if (!apiKey) {
             tryInvokeAction("apikey:prompt");
             throw new NexusApiError(
-                "No Gemini API key configured. Open Settings in the sidebar and paste your key to enable live analysis.",
+                "کلید Gemini API تنظیم نشده است. از نوار کناری وارد «تنظیمات» شوید و کلید خود را بچسبانید تا تحلیل زنده فعال شود.",
                 { code: "missing_api_key" }
             );
         }
@@ -100,7 +100,7 @@ export function createGeminiClient(options = {}) {
                     }
                     const errorBody = await response.text();
                     throw new NexusApiError(
-                        `Gemini API returned status ${response.status}: ${errorBody.slice(0, 180)}`,
+                        `Gemini API کد وضعیت ${response.status} برگرداند: ${errorBody.slice(0, 180)}`,
                         { code: "http_error", status: response.status }
                     );
                 }
@@ -115,8 +115,8 @@ export function createGeminiClient(options = {}) {
                 if (fatal) throw err;
                 throw new NexusApiError(
                     err?.name === "AbortError"
-                        ? `Request to ${model} timed out after ${Math.round(timeoutMs / 1000)}s.`
-                        : `Network request failed: ${err?.message || "unknown error"}`,
+                        ? `درخواست به ${model} پس از ${Math.round(timeoutMs / 1000)} ثانیه منقضی شد.`
+                        : `درخواست شبکه ناموفق بود: ${err?.message || "خطای نامشخص"}`,
                     { code: err?.name === "AbortError" ? "timeout" : "network_error" }
                 );
             } finally {
@@ -124,7 +124,7 @@ export function createGeminiClient(options = {}) {
             }
         }
 
-        throw new NexusApiError("Request failed after retries.", { code: "retries_exhausted" });
+        throw new NexusApiError("درخواست پس از چند تلاش ناموفق ماند.", { code: "retries_exhausted" });
     }
 
     return { generate, getModel, hasKey };

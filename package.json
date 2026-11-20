@@ -1,6 +1,6 @@
 {
   "name": "nexus",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "NEXUS — a client-side AI intelligence workspace: OSINT briefings, structured signal extraction, visual intel and analyst comms, powered by the Gemini API.",
@@ -25,7 +25,7 @@
     "url": "https://github.com/AliB11/Nexus/issues"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",

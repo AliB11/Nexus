@@ -120,7 +120,7 @@ export function byId(id) {
 export function assertElements(refs, required) {
     const missing = required.filter((key) => !refs[key]);
     if (missing.length > 0) {
-        throw new Error(`NEXUS boot failed. Missing DOM node(s): ${missing.join(", ")}`);
+        throw new Error(`راه‌اندازی NEXUS ناموفق بود. گره(های) DOM موجود نیست: ${missing.join(", ")}`);
     }
 }
 

@@ -1,7 +1,9 @@
 {
-  "name": "NEXUS",
+  "name": "NEXUS — پلتفرم اطلاعات هوش مصنوعی",
   "short_name": "NEXUS",
-  "description": "Client-side AI intelligence workspace powered by the Gemini API.",
+  "description": "محیط کاری اطلاعاتی مبتنی بر هوش مصنوعی و کاملاً سمت‌کلاینت، با نیروی Gemini API.",
+  "lang": "fa",
+  "dir": "rtl",
   "id": "/",
   "start_url": "./index.html",
   "scope": "./",

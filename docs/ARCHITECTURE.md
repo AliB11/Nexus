@@ -120,25 +120,30 @@ defines it. `deepMerge` is exported and unit-tested.
 
 ### `src/js/core/` — primitives
 
-| File            | Responsibility                                                                                                 | Pure? |
-| --------------- | -------------------------------------------------------------------------------------------------------------- | ----- |
-| `dom.js`        | The `els` map: every id the app touches, resolved once at boot. Plus `byId()` and `assertElements()`.          | no    |
-| `state.js`      | The mutable app state object (`activeTab`, `currentBriefing`, `dossiers`, `visualImage`, `chatHistory`).       | no    |
-| `bus.js`        | `registerAction` / `invokeAction` / `tryInvokeAction` — the acyclic cross-module channel.                      | yes   |
-| `sanitize.js`   | `escapeHtml()` and `safeUrl()` (scheme allowlist: http, https, mailto).                                        | yes   |
-| `markdown.js`   | `renderMarkdown()` — escapes first, then renders headings, lists, bold, italic, inline code.                   | yes   |
-| `format.js`     | `formatModelLabel`, `formatUtcTimestamp`, `formatUtcClock`, `formatFileSize`, `formatCharacterCount`.          | yes   |
-| `history.js`    | `trimChatHistory()` — bounded conversation payload.                                                            | yes   |
-| `prompts.js`    | **All model instructions.** System prompts, the four visual directives and the prompt builders.                | yes   |
-| `toast.js`      | `showToast`, `showError`, `hideError` — non-blocking feedback (never `alert()`).                               | no    |
-| `clipboard.js`  | `copyToClipboard()` — async Clipboard API with a hidden-textarea `execCommand` fallback for sandboxed iframes. | no    |
-| `theme.js`      | `initTheme`, `toggleTheme`, `getTheme` — persisted light/dark.                                                 | no    |
-| `navigation.js` | `switchTab`, `openMobileSidebar`, `closeMobileSidebar`.                                                        | no    |
-| `clock.js`      | `updateClock(now?)`, `startClock(intervalMs)` — header UTC telemetry.                                          | no    |
+| File            | Responsibility                                                                                                                                               | Pure? |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| `dom.js`        | The `els` map: every id the app touches, resolved once at boot. Plus `byId()` and `assertElements()`.                                                        | no    |
+| `state.js`      | The mutable app state object (`activeTab`, `currentBriefing`, `dossiers`, `visualImage`, `chatHistory`).                                                     | no    |
+| `bus.js`        | `registerAction` / `invokeAction` / `tryInvokeAction` — the acyclic cross-module channel.                                                                    | yes   |
+| `sanitize.js`   | `escapeHtml()`, `unescapeHtml()` and `safeUrl()` (scheme allowlist: http, https, mailto).                                                                    | yes   |
+| `markdown.js`   | `renderMarkdown()` — escapes first, then renders headings, ordered/unordered lists, blockquotes, rules, links, bold, italic, inline code.                    | yes   |
+| `labels.js`     | Render-time Persian labels for the wire enums: `threatLabel`, `sentimentLabel`, `categoryLabel`, `focusLabel`.                                               | yes   |
+| `schema.js`     | The Module 02 Gemini `responseSchema` — the JSON contract, kept DOM-free so tests can assert it.                                                             | yes   |
+| `format.js`     | `formatNumber` (Persian digits), `formatModelLabel`, `formatUtcTimestamp`, `formatUtcClock`, `formatFileSize`, `formatCharacterCount`, `formatMaxImageSize`. | yes   |
+| `history.js`    | `trimChatHistory()` — bounded conversation payload.                                                                                                          | yes   |
+| `prompts.js`    | **All model instructions.** System prompts, the four visual directives and the prompt builders.                                                              | yes   |
+| `toast.js`      | `showToast`, `showError`, `hideError` — non-blocking feedback (never `alert()`).                                                                             | no    |
+| `clipboard.js`  | `copyToClipboard()` — async Clipboard API with a hidden-textarea `execCommand` fallback for sandboxed iframes.                                               | no    |
+| `theme.js`      | `initTheme`, `toggleTheme`, `getTheme` — persisted light/dark.                                                                                               | no    |
+| `navigation.js` | `switchTab` (toggles `.nav-tab-active` + `aria-current`), `openMobileSidebar`, `closeMobileSidebar`, `isMobileSidebarClosed`.                                | no    |
+| `clock.js`      | `updateClock(now?)`, `startClock(intervalMs)` — header UTC telemetry.                                                                                        | no    |
 
 `prompts.js` deserves emphasis: in an AI product the prompts _are_ the business
 logic, so they are versioned, reviewed and diffed in one file instead of being
 buried inside event handlers.
+
+`labels.js` and `schema.js` exist because the UI is Persian while the API
+contract is not. See §11.
 
 ### `src/js/api/` — the Gemini boundary
 
@@ -377,7 +382,44 @@ runtime in the browser.
 
 ---
 
-## 11. Known limitations & roadmap
+## 11. Language & direction (Persian / RTL)
+
+The interface language is Persian and the document direction is RTL. The split
+is deliberate:
+
+| Layer                                                | Language | Why                                                                                   |
+| ---------------------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| UI copy, toasts, banners                             | Persian  | It is what the analyst reads.                                                         |
+| Model prompts (`prompts.js`)                         | Persian  | The model must answer in Persian; every builder says so explicitly.                   |
+| Rendered enum values                                 | Persian  | Translated at render time by `labels.js`.                                             |
+| `responseSchema` field names                         | English  | Gemini API contract.                                                                  |
+| `threatLevel` / `sentiment` / `category` enum values | English  | API contract **and** backwards compatibility with dossiers already in `localStorage`. |
+| Brand, model ids, clock, storage keys                | Latin    | `NEXUS`, `GEMINI 3 FLASH`, `23:15:04 UTC`, `nexus_settings_v1`.                       |
+
+Layout rules that keep RTL correct:
+
+- **Only logical utilities.** `start-*`/`end-*`, `ps-*`/`pe-*`, `ms-*`/`me-*`,
+  `border-e`, `rounded-ss-*`/`rounded-se-*`, `text-start`. A test in
+  `tests/boot.test.js` scans every `class` attribute in `src/index.html` and
+  every string literal in `src/js/**` and fails if a physical `left-`/`right-`/
+  `pl-`/`pr-`/`ml-`/`mr-`/`translate-x-` utility appears.
+- **The drawer has one class.** `core/navigation.js` toggles `drawer-closed`;
+  `styles/main.css` chooses `translateX(±100%)` from `[dir]` and only below the
+  `lg` breakpoint. Direction logic lives in exactly one place.
+- **Latin islands get `dir="ltr"`.** The UTC clock, timestamps, model label, API
+  key fields, source URLs and citation indices — otherwise bidi reorders them.
+- **Casing and tracking are neutralised** for `[lang="fa"]` copy in
+  `styles/main.css`; `text-transform: uppercase` is a no-op in Persian and wide
+  letter-spacing visually breaks connected glyphs.
+- **Persian digits for counters only** (`formatNumber` → `fa-IR`). Timestamps and
+  byte sizes stay Latin so archived data remains sortable and comparable.
+
+Adding new UI text: put enum-to-label maps in `core/labels.js`, numbers through
+`core/format.js`, and never write a physical direction utility.
+
+---
+
+## 12. Known limitations & roadmap
 
 | Item                | Status / note                                                                                                                                                 |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |

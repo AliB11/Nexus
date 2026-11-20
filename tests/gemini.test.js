@@ -163,7 +163,7 @@ test("a 400 is fatal and is not retried", async () => {
             (err) => {
                 assert.equal(err.code, "http_error");
                 assert.equal(err.status, 400);
-                assert.match(err.message, /status 400/);
+                assert.match(err.message, /وضعیت 400/);
                 return true;
             }
         );

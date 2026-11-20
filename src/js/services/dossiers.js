@@ -11,6 +11,8 @@ import { escapeHtml } from "../core/sanitize.js";
 import { invokeAction } from "../core/bus.js";
 import { switchTab } from "../core/navigation.js";
 import { showToast } from "../core/toast.js";
+import { formatNumber } from "../core/format.js";
+import { focusLabel } from "../core/labels.js";
 export function loadDossiers() {
     try {
         const raw = localStorage.getItem(config.storage.dossiers);
@@ -29,12 +31,12 @@ export function persistDossiers() {
 }
 
 export function renderDossierList() {
-    els.dossierCount.textContent = state.dossiers.length;
+    els.dossierCount.textContent = formatNumber(state.dossiers.length);
 
     if (state.dossiers.length === 0) {
         els.dossierList.innerHTML = `
             <div class="p-3 rounded-xl border border-dashed border-slate-200 dark:border-obsidian-700 text-center">
-                <p class="text-xs text-slate-400">No archived dossiers yet.</p>
+                <p class="text-xs text-slate-400">هنوز پرونده‌ای بایگانی نشده است.</p>
             </div>
         `;
         return;
@@ -50,18 +52,18 @@ export function renderDossierList() {
         info.className = "min-w-0 flex-1";
         info.innerHTML = `
             <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">${escapeHtml(dossier.topic)}</p>
-            <p class="text-[10px] font-mono text-slate-400 mt-0.5">${escapeHtml(dossier.focus)} &middot; ${escapeHtml(dossier.timestamp)}</p>
+            <p class="text-[10px] font-mono text-slate-400 mt-0.5">${escapeHtml(focusLabel(dossier.focus))} &middot; <span dir="ltr">${escapeHtml(dossier.timestamp)}</span></p>
         `;
         info.addEventListener("click", () => {
             state.currentBriefing = dossier;
             invokeAction("briefing:render", dossier);
             switchTab("briefing");
-            showToast("Loaded archived dossier.", "info");
+            showToast("پروندهٔ بایگانی‌شده بارگذاری شد.", "info");
         });
 
         const delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.setAttribute("aria-label", "Delete dossier");
+        delBtn.setAttribute("aria-label", "حذف پرونده");
         delBtn.className =
             "p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 opacity-70 group-hover:opacity-100 transition-all shrink-0";
         delBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>`;
@@ -69,7 +71,7 @@ export function renderDossierList() {
             e.stopPropagation();
             state.dossiers = state.dossiers.filter((d) => d.id !== dossier.id);
             persistDossiers();
-            showToast("Dossier removed from archive.", "info");
+            showToast("پرونده از بایگانی حذف شد.", "info");
         });
 
         item.appendChild(info);

@@ -35,9 +35,31 @@
     .font-mono {
         font-variant-ligatures: none;
     }
+
+    /* The UI is Persian (RTL). Uppercasing and wide letter-spacing are Latin-only
+       decorations: casing does nothing to an Arabic-derived script, and tracking
+       tears connected Persian glyphs apart visually. Technical spans opt back in
+       with dir="ltr". */
+    [lang="fa"] .uppercase:not([dir="ltr"]),
+    [lang="fa"] .tracking-wide:not([dir="ltr"]),
+    [lang="fa"] .tracking-wider:not([dir="ltr"]) {
+        text-transform: none;
+        letter-spacing: normal;
+    }
 }
 
 @layer components {
+    /* Sidebar navigation. Lives here rather than in two duplicated Tailwind class
+       strings (markup + core/navigation.js) that had drifted out of sync. */
+    .nav-tab {
+        @apply w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all text-start border border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-obsidian-800;
+    }
+
+    .nav-tab-active,
+    .nav-tab-active:hover {
+        @apply bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20;
+    }
+
     /* Slim scrollbars for the two long-scroll surfaces (archive + chat). */
     #dossierList,
     #chatMessages {
@@ -65,6 +87,19 @@
     .dark #dossierList::-webkit-scrollbar-thumb,
     .dark #chatMessages::-webkit-scrollbar-thumb {
         background-color: theme("colors.obsidian.700");
+    }
+}
+
+/* The mobile drawer slides off-screen along the *inline* axis: the right edge in
+   RTL, the left edge in LTR. JS only toggles `drawer-closed`; direction is
+   resolved here, and the desktop layout never transforms. */
+@media (max-width: 1023.98px) {
+    #sidebar.drawer-closed {
+        transform: translateX(-100%);
+    }
+
+    [dir="rtl"] #sidebar.drawer-closed {
+        transform: translateX(100%);
     }
 }
 

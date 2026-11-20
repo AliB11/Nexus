@@ -14,8 +14,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["Inter", "system-ui", "sans-serif"],
-                mono: ["JetBrains Mono", "monospace"]
+                /* Vazirmatn carries the Persian UI; Inter and Tahoma are the
+                   Latin / offline fallbacks, in that order. */
+                sans: ["Vazirmatn", "Inter", "Segoe UI", "Tahoma", "system-ui", "sans-serif"],
+                mono: ["JetBrains Mono", "Vazirmatn", "Tahoma", "monospace"]
             },
             colors: {
                 /** NEXUS dark-shell palette ("obsidian"). */

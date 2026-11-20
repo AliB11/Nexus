@@ -15,7 +15,7 @@ import { state } from "./core/state.js";
 import { startClock } from "./core/clock.js";
 import { hideError, showError } from "./core/toast.js";
 import { initTheme, toggleTheme } from "./core/theme.js";
-import { closeMobileSidebar, openMobileSidebar, switchTab } from "./core/navigation.js";
+import { closeMobileSidebar, isMobileSidebarClosed, openMobileSidebar, switchTab } from "./core/navigation.js";
 import { loadDossiers } from "./services/dossiers.js";
 import { hasApiKey, isKeyInjected } from "./services/settings.js";
 import { initSettingsDialog, openSettingsDialog } from "./ui/settings-dialog.js";
@@ -45,8 +45,7 @@ function bindShellEvents() {
     // Theme & Mobile Drawer
     els.themeToggleBtn.addEventListener("click", toggleTheme);
     els.mobileMenuBtn.addEventListener("click", () => {
-        const isClosed = els.sidebar.classList.contains("-translate-x-full");
-        isClosed ? openMobileSidebar() : closeMobileSidebar();
+        isMobileSidebarClosed() ? openMobileSidebar() : closeMobileSidebar();
     });
     els.sidebarBackdrop.addEventListener("click", closeMobileSidebar);
     els.dismissErrorBtn.addEventListener("click", hideError);
@@ -63,12 +62,12 @@ function bindShellEvents() {
  */
 function registerGlobalErrorHandlers() {
     window.addEventListener("error", (event) => {
-        if (event.message) showError(`Unexpected error: ${event.message}`);
+        if (event.message) showError(`خطای غیرمنتظره: ${event.message}`);
     });
 
     window.addEventListener("unhandledrejection", (event) => {
         const reason = event.reason;
-        showError(`Unexpected error: ${reason?.message || reason || "unknown rejection"}`);
+        showError(`خطای غیرمنتظره: ${reason?.message || reason || "ردِ نامشخص"}`);
     });
 }
 
@@ -94,7 +93,7 @@ export function boot() {
 
     // Nothing works without credentials, so ask for them up front (once).
     if (!hasApiKey() && !isKeyInjected()) {
-        openSettingsDialog({ reason: "NEXUS needs a Gemini API key to run live analysis." });
+        openSettingsDialog({ reason: "NEXUS برای تحلیل زنده به یک کلید Gemini API نیاز دارد." });
     }
 
     document.documentElement.dataset.nexusReady = "true";
@@ -105,6 +104,6 @@ try {
 } catch (err) {
     // The shell itself failed — report it on the page rather than only in the console.
     document.documentElement.dataset.nexusReady = "false";
-    showError(`NEXUS failed to start: ${err?.message || err}`);
+    showError(`راه‌اندازی NEXUS ناموفق بود: ${err?.message || err}`);
     console.error("[NEXUS] boot failure", err);
 }
