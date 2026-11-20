@@ -1,7 +1,8 @@
 /**
  * The Module 02 structured-output contract.
  *
- * This is the *data* agreement between NEXUS and the Gemini API, so it lives in
+ * This is the *data* agreement between NEXUS and whichever model gateway is
+ * configured, so it lives in
  * `core/` next to the prompts rather than inside `modules/matrix.js`: it must be
  * reviewable, diffable and testable without a DOM.
  *

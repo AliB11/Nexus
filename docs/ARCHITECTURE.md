@@ -13,12 +13,12 @@ for, how data moves through it, and where new work belongs.
 NEXUS is deliberately small and deliberately static. Every decision below follows
 from these four constraints:
 
-| Constraint                    | Consequence                                                                                                                                    |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No backend**                | The browser calls the Gemini API directly. There is no session, no database and no server-side secret; the visitor supplies their own API key. |
-| **No bundler**                | Source ships as native ES modules. `npm run build` compiles CSS and _copies_ JS — it never rewrites it. What you read in `src/` is what runs.  |
-| **Untrusted model output**    | Everything the model returns is treated as hostile input: escaped before it reaches `innerHTML`, and every generated URL is scheme-checked.    |
-| **Zero runtime dependencies** | No framework, no icon pack, no markdown library. The only runtime third-party assets are Tailwind's compiled CSS and Google Fonts.             |
+| Constraint                    | Consequence                                                                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No backend**                | The browser calls the model gateway directly. There is no session, no database and no server-side secret; the visitor supplies their own key. A bundled local proxy covers gateways that refuse cross-origin browser calls. |
+| **No bundler**                | Source ships as native ES modules. `npm run build` compiles CSS and _copies_ JS — it never rewrites it. What you read in `src/` is what runs.                                                                               |
+| **Untrusted model output**    | Everything the model returns is treated as hostile input: escaped before it reaches `innerHTML`, and every generated URL is scheme-checked.                                                                                 |
+| **Zero runtime dependencies** | No framework, no icon pack, no markdown library. The only runtime third-party assets are Tailwind's compiled CSS and Google Fonts.                                                                                          |
 
 Build and test tooling (`tailwindcss`, `eslint`, `prettier`, `jsdom`) is dev-only.
 The deployed artifact is plain HTML, CSS and JS.
@@ -42,17 +42,19 @@ The deployed artifact is plain HTML, CSS and JS.
 │        │        │            toast · clipboard · markdown · sanitize     │
 │        │        │            format · history · prompts · clock          │
 │        │        │                                                        │
-│        │        ├── services/ dossiers (archive) · settings (credentials)│
+│        │        ├── services/ provider (routing) · settings · dossiers   │
 │        │        │                                                        │
-│        │        └── api/     client (singleton) → gemini (REST + retry)  │
+│        │        └── api/     openai.js ⇄ gemini.js (errors.js shared)    │
 │        │                                                                 │
-│        └── ui/     settings-dialog (API key + model)                     │
+│        └── ui/     settings-dialog (gateway · key · URL · model · test)  │
 │                                                                          │
 │  src/js/config.js ── every tunable default, overridable at runtime       │
 └──────────────────────────────────────────────────────────────────────────┘
                                    │  HTTPS
                                    ▼
-             generativelanguage.googleapis.com/v1beta  (Gemini API)
+    coarena.ai/api/v1  (default, OpenAI-compatible)   ← or, on the "google"
+                                                        gateway setting,
+    generativelanguage.googleapis.com/v1beta  (Gemini native protocol)
 ```
 
 **Rule of direction:** dependencies point _downwards and inwards_. `modules/`
@@ -79,7 +81,7 @@ Nexus/
 ├── docs/                        This folder: architecture, configuration, deployment
 ├── public/                      Copied verbatim into dist/ (favicon, icons, manifest,
 │                                robots.txt, 404.html, og-image.png)
-├── scripts/                     Build & dev tooling (Node, no dependencies)
+├── scripts/                     Build, dev, verify, icon + gateway-proxy tooling (Node, no dependencies)
 │   ├── build.mjs                Tailwind compile + copy → dist/
 │   ├── dev.mjs                  build → serve → watch → rebuild
 │   ├── serve.mjs                Static file server (0.0.0.0, traversal-safe)
@@ -92,8 +94,8 @@ Nexus/
 │       ├── config.js            Runtime configuration & defaults
 │       ├── main.js              Entry point / boot sequence
 │       ├── core/                Framework-free primitives (no feature knowledge)
-│       ├── api/                 Gemini REST client + shared instance
-│       ├── services/            Persistence: dossier archive, credentials
+│       ├── api/                 Gateway transports (OpenAI-compatible + Gemini)
+│       ├── services/            Provider routing, credential storage, dossier archive
 │       ├── ui/                  Cross-cutting UI (settings dialog)
 │       └── modules/             The four intelligence modules
 ├── tests/                       Node built-in test runner (node:test)
@@ -112,9 +114,10 @@ Nexus/
 
 ### `src/js/config.js` — runtime configuration
 
-Single source of truth for every tunable: API base URL, default model, retry
-count, backoff base, request timeout, localStorage key names, upload limits,
-chat history cap, toast lifetime. `DEFAULT_CONFIG` is frozen; the exported
+Single source of truth for every tunable: default gateway (`api.provider`), its
+base URL and model, the alternative Google endpoint (`api.google`), model
+suggestions, retry count, backoff base, request timeout, localStorage key names,
+upload limits, chat history cap, toast lifetime. `DEFAULT_CONFIG` is frozen; the exported
 `config` is a deep clone merged with `window.NEXUS_CONFIG` when the host page
 defines it. `deepMerge` is exported and unit-tested.
 
@@ -128,7 +131,7 @@ defines it. `deepMerge` is exported and unit-tested.
 | `sanitize.js`   | `escapeHtml()`, `unescapeHtml()` and `safeUrl()` (scheme allowlist: http, https, mailto).                                                                    | yes   |
 | `markdown.js`   | `renderMarkdown()` — escapes first, then renders headings, ordered/unordered lists, blockquotes, rules, links, bold, italic, inline code.                    | yes   |
 | `labels.js`     | Render-time Persian labels for the wire enums: `threatLabel`, `sentimentLabel`, `categoryLabel`, `focusLabel`.                                               | yes   |
-| `schema.js`     | The Module 02 Gemini `responseSchema` — the JSON contract, kept DOM-free so tests can assert it.                                                             | yes   |
+| `schema.js`     | The Module 02 JSON contract (`MATRIX_RESPONSE_SCHEMA`), kept DOM-free so tests can assert it. Each transport maps it to its own structured-output form.      | yes   |
 | `format.js`     | `formatNumber` (Persian digits), `formatModelLabel`, `formatUtcTimestamp`, `formatUtcClock`, `formatFileSize`, `formatCharacterCount`, `formatMaxImageSize`. | yes   |
 | `history.js`    | `trimChatHistory()` — bounded conversation payload.                                                                                                          | yes   |
 | `prompts.js`    | **All model instructions.** System prompts, the four visual directives and the prompt builders.                                                              | yes   |
@@ -145,49 +148,108 @@ buried inside event handlers.
 `labels.js` and `schema.js` exist because the UI is Persian while the API
 contract is not. See §11.
 
-### `src/js/api/` — the Gemini boundary
+### `src/js/api/` — the gateway boundary
 
-- `gemini.js` — `createGeminiClient({ getApiKey, getModel, maxRetries, backoffBaseMs, timeoutMs })`.
-  Returns `{ generate, getModel, hasKey }`. Behaviour:
-  - key is sent as the **`x-goog-api-key` header**, never as a URL query parameter;
-  - `AbortController` timeout per attempt;
-  - exponential backoff (1s, 2s, 4s, 8s) on `429`, `5xx` and network failures;
-  - `4xx` (other than 429) is fatal and is **not** retried;
-  - missing key throws `NexusApiError{ code: "missing_api_key" }` _and_ fires the
-    `apikey:prompt` bus action, so the UI opens the settings dialog on its own;
-  - helpers `firstText()` (concatenates all text parts), `blockReason()`
-    (surfaces `SAFETY`/`RECITATION`/… instead of a blank screen) and
-    `extractSources()` (grounding citations, `groundingAttributions` first with a
-    `groundingChunks` fallback, de-duplicated by URI).
-- `client.js` — the singleton `api` instance wired to `services/settings.js`.
-  Key and model are read **per request**, so a change in the dialog applies
-  immediately with no reload.
+Two transports, one neutral request/result contract, so no module knows which
+gateway answered:
 
-### `src/js/services/` — persistence
+```
+NexusRequest { system?, messages[{role,text}], images?, jsonSchema?, grounding?, maxTokens? }
+        │
+        ├── toOpenAIPayload()  → POST {base}/chat/completions   (openai.js)
+        └── toGeminiRequest()  → POST {base}/models/{m}:generateContent   (gemini.js)
+        │
+NexusResult  { text, sources[], finishReason, model, groundingApplied, raw }
+        ↑ fromOpenAIResult() / fromGeminiResult()
+```
+
+- `errors.js` — the shared `NexusApiError` (`missing_api_key` · `http_error` ·
+  `timeout` · `network_error` · `retries_exhausted`), `parseOpenAIError()`,
+  `sleep()` and `backoffDelay()`, which honours a server `Retry-After` when it
+  asks for longer than the exponential delay.
+- `openai.js` — `createOpenAIClient({ getApiKey, getBaseUrl, getModel, maxRetries,
+backoffBaseMs, timeoutMs, fetchImpl })` → `{ generate, listModels, getModel,
+getBaseUrl, hasKey }`. Behaviour:
+  - `POST {base}/chat/completions` with **`Authorization: Bearer <key>`**; the key
+    never appears in a URL;
+  - images go out as **inline base64 data URLs** — Coarena's Gemini models report
+    `image_url: false, image_base64: true`, so remote URLs would be refused;
+  - structured output becomes `response_format: { type: "json_schema", strict }`
+    (Coarena reports `json_schema_enforced`), or `{ type: "json_object" }` when
+    strictness is not requested;
+  - retries `429`/`5xx`/network with backoff, but a `429` carrying
+    `x-should-retry: false` (Coarena's spent daily quota) is **final** — retrying
+    it only burns the per-minute budget;
+  - `COARENA_ADVICE` maps 18 documented gateway error codes onto Persian advice,
+    so `model_api_terms_required` tells the analyst to accept the terms instead of
+    showing raw JSON;
+  - `listModels()` reads the public catalogue; `networkErrorMessage()` explains a
+    browser-level failure (CORS / DNS / blocked origin) and names the remedy;
+  - the response `model` field is surfaced, because Coarena's free plan may answer
+    with a cheaper model than the one requested (cost routing).
+- `gemini.js` — the Gemini-native transport for a direct Google AI Studio key:
+  `x-goog-api-key` header, `contents`/`parts` bodies, `googleSearch` grounding,
+  `responseSchema`, plus `firstText()`, `blockReason()` and `extractSources()`
+  (`groundingAttributions` first, `groundingChunks` fallback, de-duplicated by URI).
+  This is the only transport where live web citations exist.
+- `provider.js` (in this folder) — the neutral types as JSDoc typedefs.
+
+Both clients take `fetchImpl`, so tests exercise retry, timeout and error mapping
+without a network.
+
+### `src/js/services/` — routing and persistence
+
+- `provider.js` — **the single place that decides where NEXUS talks to.** It holds
+  the `PROVIDERS` registry (label, transport, key URL, docs URL, Persian notes),
+  builds and caches the client per gateway, and exposes `runRequest()`,
+  `testConnection()`, `listModels()`, `getModelLabel()` and `matchModelAlias()`.
+  Key, base URL and model are read **per request**, so a change in the dialog
+  applies immediately; only a gateway switch rebuilds the client.
+  `runRequest()` also sets `groundingUnavailable` when a module asked for live web
+  grounding that the active transport cannot provide — honesty over silent loss.
+  `testConnection(overrides)` probes the values **still typed in the form**, not
+  the stored ones, and never persists anything.
+- `settings.js` — credential resolution and storage: `getProvider`, `getApiKey`,
+  `getBaseUrl`, `getModel`, `providerDefaults`, `normalizeBaseUrl`, `saveSettings`,
+  `clearApiKey`, `maskKey`, `isKeyInjected`, `getEffectiveSettings`. Key
+  precedence: `window.NEXUS_CONFIG.apiKey` → `window.NEXUS_API_KEY` → `localStorage`.
+  A stored base URL is only honoured when it is still an absolute `http(s)` URL.
 
 - `dossiers.js` — the saved-briefing archive: `loadDossiers`, `persistDossiers`,
   `renderDossierList`. All `localStorage` access is inside `try/catch` (Safari
   private mode and sandboxed iframes throw).
-- `settings.js` — credential resolution and storage. Order of precedence:
-  `window.NEXUS_CONFIG.apiKey` → `window.NEXUS_API_KEY` → `localStorage`. Also
-  `maskKey()` for display and `isKeyInjected()` so the UI can lock the field when
-  the host supplies the key.
 
 ### `src/js/ui/settings-dialog.js`
 
-The API key / model dialog: opens on first run and on any unauthenticated
-request, saves to localStorage, refreshes the sidebar status chip
-(`SET` / `MISSING` / `INJECTED`) and the engine label. Handles Escape, backdrop
-click and a Tab focus trap.
+The gateway credentials dialog: opens on first run and on any unauthenticated
+request. Four inputs — gateway selector, **API key**, **URL**, **model** — plus a
+**تست اتصال** button and a result box (`role="status"`, `aria-live="polite"`).
+
+- The gateway selector rewrites the URL and model to that gateway's defaults, but
+  only while they still hold the previous gateway's values, so a hand-typed proxy
+  URL is never thrown away.
+- The model field is backed by a `<datalist>` seeded from `config.api.modelSuggestions`
+  and replaced by the live catalogue after the first successful test.
+- The test reads the form (not storage), fetches the public model list, then spends
+  one token on a chat call, and reports latency, the model that answered, and — when
+  the typed id is a near-miss — corrects it in place.
+- Saving validates the URL shape and a non-empty key, writes all four fields,
+  refreshes the sidebar chip (`تنظیم‌شده` / `ناموجود` / `تزریق‌شده`) and the engine
+  label (`Coarena · GEMINI 3.8 FLASH`).
+- Escape, backdrop click and a Tab focus trap; key/URL/model inputs are `dir="ltr"`
+  inside the RTL shell.
 
 ### `src/js/modules/` — the four intelligence modules
 
-| #   | File          | Panel            | Gemini feature used                                     | Output                                                       |
-| --- | ------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
-| 01  | `briefing.js` | `panel-briefing` | `tools: [{ google_search: {} }]` + system instruction   | Markdown report + verified web citations                     |
-| 02  | `matrix.js`   | `panel-matrix`   | `responseMimeType: application/json` + `responseSchema` | Threat level, sentiment, confidence, entities, SWOT, actions |
-| 03  | `visual.js`   | `panel-visual`   | `inlineData` (base64 PNG/JPEG/WebP ≤ 10 MB)             | Directive-driven visual brief (4 modes)                      |
-| 04  | `comms.js`    | `panel-comms`    | Multi-turn `contents` history, optional grounding       | Chat transcript with per-answer citations                    |
+Every module calls `runRequest()` with the neutral shape and reads `result.text`,
+`result.sources`, `result.finishReason`. None of them imports a transport.
+
+| #   | File          | Panel            | Neutral request                                       | Output                                                       |
+| --- | ------------- | ---------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
+| 01  | `briefing.js` | `panel-briefing` | `{ system, messages, grounding: true }`               | Markdown report; citations where the transport supports them |
+| 02  | `matrix.js`   | `panel-matrix`   | `{ messages, jsonSchema: MATRIX_RESPONSE_SCHEMA }`    | Threat level, sentiment, confidence, entities, SWOT, actions |
+| 03  | `visual.js`   | `panel-visual`   | `{ messages, images: [{ mimeType, data }] }` (≤ 8 MB) | Directive-driven visual brief (4 modes)                      |
+| 04  | `comms.js`    | `panel-comms`    | `{ system, messages: chatHistory, grounding }`        | Chat transcript, bounded history, citations when available   |
 
 Each module exports its handlers plus one `init<Module>()` that binds its own
 listeners and registers the actions other modules may call. Nothing is bound
@@ -222,11 +284,12 @@ form submit / preset click
   → handleBriefingSubmit(e)
       topic   = #briefingTopic.value.trim()
       focus   = #briefingFocus.value
-      payload = { contents:[{parts:[{text: buildBriefingQuery({topic,focus})}]}],
-                  tools:[{google_search:{}}],
-                  systemInstruction:{parts:[{text: BRIEFING_SYSTEM_PROMPT}]} }
-  → api.generate(payload)                      [retry/backoff, key header]
-  → firstText(result)  +  extractSources(candidate)
+      request = { system: BRIEFING_SYSTEM_PROMPT,
+                  messages:[{role:"user", text: buildBriefingQuery({topic,focus})}],
+                  grounding: true }
+  → runRequest(request)                        [transport + retry/backoff + key header]
+  → result.text  +  result.sources
+  → groundingUnavailable? → toast "this gateway has no live web search"
   → dossier = { id:"dos_"+Date.now(), topic, focus, timestamp, rawText, sources }
   → state.currentBriefing = dossier
   → renderBriefing(dossier)                    [renderMarkdown + citation grid]
@@ -239,9 +302,9 @@ form submit / preset click
 ```
 textarea (or text pushed from Module 01)
   → handleMatrixSubmit(e)
-      payload.generationConfig = { responseMimeType:"application/json",
-                                   responseSchema: MATRIX_RESPONSE_SCHEMA }
-  → api.generate(payload) → firstText → JSON.parse (guarded, friendly error)
+      request = { messages:[{role:"user", text: buildMatrixPrompt({sourceText})}],
+                  jsonSchema: MATRIX_RESPONSE_SCHEMA }
+  → runRequest(request) → result.text → JSON.parse (guarded, friendly error)
   → renderMatrixResult(data)
       threatLevel → badge colour map (LOW/MODERATE/ELEVATED/CRITICAL)
       confidenceScore → clamped 0..100 → bar width
@@ -255,26 +318,29 @@ file input | drag & drop
   → handleImageFile(file)   [mime + size validation → FileReader → base64]
   → handleVisualSubmit(e)
       finalPrompt = buildVisualPrompt({ mode, customQuery })
-      parts = [{ text }, { inlineData: { mimeType, data } }]
-  → api.generate → firstText → renderMarkdown → output card (+ copy)
+      request = { messages:[{role:"user", text: finalPrompt}],
+                  images:[{ mimeType, data }] }        ← inline base64 on both transports
+  → runRequest → result.text → renderMarkdown → output card (+ copy)
 ```
 
 ### Module 04 — Analyst Comms
 
 ```
 chat submit
-  → appendChatBubble("user") + state.chatHistory.push(user turn)
+  → appendChatBubble("user") + state.chatHistory.push({role:"user", text})
   → appendTypingIndicator()
-  → payload = { contents: state.chatHistory, systemInstruction: ANALYST_SYSTEM_PROMPT,
-                tools: grounding ? [{google_search:{}}] : undefined }
-  → api.generate → firstText → extractSources
-  → push model turn → trimChatHistory(history, config.limits.chatHistoryMaxMessages)
+  → request = { system: ANALYST_SYSTEM_PROMPT, messages: state.chatHistory,
+                grounding: chatGroundingToggle.checked }
+  → runRequest → result.text + result.sources
+  → push {role:"assistant", text} → trimChatHistory(history, config.limits.chatHistoryMaxMessages)
   → removeTypingIndicator() → appendChatBubble("model", text, sources)
   ✗ on error: removeTypingIndicator(), history.pop()  ← failed turn rolled back
 ```
 
-The rollback matters: the payload _is_ `state.chatHistory`, so a failed turn left
-in the array would desynchronise the transcript from what the API has seen.
+The rollback matters: the request messages _are_ `state.chatHistory`, so a failed
+turn left in the array would desynchronise the transcript from what the gateway has
+seen. History is stored provider-neutral (`{ role, text }`) and each transport maps
+it to its own wire shape.
 
 ---
 
@@ -304,15 +370,15 @@ In-memory (`src/js/core/state.js`):
 | `dossiers`         | dossier array                                   | mirrors storage |
 | `visualImage`      | `{ base64, mimeType, fileName }`                | page load       |
 | `visualReportText` | string                                          | page load       |
-| `chatHistory`      | Gemini `contents` array                         | page load       |
+| `chatHistory`      | provider-neutral `[{ role, text }]`             | page load       |
 
 Persisted (`localStorage`, names come from `config.storage`):
 
-| Key                       | Contents                        | Written by             |
-| ------------------------- | ------------------------------- | ---------------------- |
-| `nexus_theme`             | `"dark"` / `"light"`            | `core/theme.js`        |
-| `nexus_intel_dossiers_v1` | archived briefings (JSON array) | `services/dossiers.js` |
-| `nexus_settings_v1`       | `{ apiKey, model }`             | `services/settings.js` |
+| Key                       | Contents                               | Written by             |
+| ------------------------- | -------------------------------------- | ---------------------- |
+| `nexus_theme`             | `"dark"` / `"light"`                   | `core/theme.js`        |
+| `nexus_intel_dossiers_v1` | archived briefings (JSON array)        | `services/dossiers.js` |
+| `nexus_settings_v1`       | `{ provider, apiKey, baseUrl, model }` | `services/settings.js` |
 
 Versioned key names (`_v1`) mean a schema change can ship as a new key instead of
 migrating or corrupting stored data.
@@ -330,10 +396,13 @@ visitor's API key is a secret that lives only in their browser.**
    `tests/markdown.test.js` and `tests/sanitize.test.js`.
 2. **Link injection.** Citation `href`s go through `safeUrl()`, which allows only
    `http:`, `https:` and `mailto:` — `javascript:`/`data:` become `#`.
-3. **Credential handling.** Keys are never committed (CI greps for `AIza…`),
-   never placed in a URL, and are sent only to
-   `generativelanguage.googleapis.com` in the `x-goog-api-key` header. The dialog
-   masks the stored value and offers explicit removal. See [SECURITY.md](../SECURITY.md).
+3. **Credential handling.** Keys are never committed — `npm run verify` scans
+   `src/`, `docs/` and `public/` for Coarena (`coa_…`), Google (`AIza…`), Anthropic
+   (`sk-ant-…`) and OpenAI (`sk-…`) key shapes and fails the build on a hit. A key
+   is never placed in a URL: it travels in `Authorization: Bearer` (or
+   `x-goog-api-key` on the Gemini transport) to the base URL the visitor typed. The
+   dialog masks the stored value and offers explicit removal, and the connection
+   test never writes to storage. See [SECURITY.md](../SECURITY.md).
 4. **External links** always carry `rel="noopener noreferrer"` and `target="_blank"`.
 5. **Uploads** are validated by MIME type and size before being read; the base64
    payload is never persisted.
@@ -341,8 +410,15 @@ visitor's API key is a secret that lives only in their browser.**
    root (`scripts/serve.mjs`).
 
 Not covered (by design): there is no server-side key custody and no rate limiting
-beyond Google's. A public deployment therefore needs either visitor-supplied keys
-(the default) or a proxy — see [DEPLOYMENT.md](DEPLOYMENT.md#5-keeping-a-key-off-the-client).
+beyond the gateway's own (Coarena's free plan allows 30 requests a minute, 2 at
+once, and a daily request budget). A public deployment therefore needs either
+visitor-supplied keys (the default) or a proxy — see
+[DEPLOYMENT.md §5](DEPLOYMENT.md#5-the-gateway-coarena-cors-and-keeping-a-key-off-the-client).
+
+7. **Gateway data retention.** Coarena stores every prompt and reply sent through
+   its Model API and may license them in datasets; this cannot be withdrawn. The
+   settings dialog says so in Persian next to the gateway selector, and the same
+   warning is in [SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -374,8 +450,10 @@ runtime in the browser.
 3. **Prompt.** Add the instruction or builder to `src/js/core/prompts.js` — not to
    the handler.
 4. **Module.** Create `src/js/modules/<name>.js` exporting `init<Name>()`; call
-   `api.generate(payload)`, render with `renderMarkdown()`/`escapeHtml()`, report
-   failures with `showError()`.
+   `runRequest({ messages, … })` from `services/provider.js`, render
+   `result.text` with `renderMarkdown()`/`escapeHtml()`, report failures with
+   `showError()`. Never import a transport directly — that is what keeps a new
+   module working on both gateways.
 5. **Boot.** Call `init<Name>()` from `src/js/main.js`.
 6. **Tests.** Cover any new pure logic in `tests/`.
 7. **Docs.** Add the row to the module table above and a `CHANGELOG.md` entry.
@@ -392,7 +470,7 @@ is deliberate:
 | UI copy, toasts, banners                             | Persian  | It is what the analyst reads.                                                         |
 | Model prompts (`prompts.js`)                         | Persian  | The model must answer in Persian; every builder says so explicitly.                   |
 | Rendered enum values                                 | Persian  | Translated at render time by `labels.js`.                                             |
-| `responseSchema` field names                         | English  | Gemini API contract.                                                                  |
+| `MATRIX_RESPONSE_SCHEMA` field names                 | English  | The gateway's structured-output contract, and stored dossiers must keep parsing.      |
 | `threatLevel` / `sentiment` / `category` enum values | English  | API contract **and** backwards compatibility with dossiers already in `localStorage`. |
 | Brand, model ids, clock, storage keys                | Latin    | `NEXUS`, `GEMINI 3 FLASH`, `23:15:04 UTC`, `nexus_settings_v1`.                       |
 
@@ -421,13 +499,14 @@ Adding new UI text: put enum-to-label maps in `core/labels.js`, numbers through
 
 ## 12. Known limitations & roadmap
 
-| Item                | Status / note                                                                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tailwind Play CDN   | Removed — the CSS is now compiled and purged (~31 KB instead of a ~300 KB runtime JIT script).                                                                |
-| Tailwind v4         | Pinned to v3.4 to keep the existing `darkMode: "class"` + palette semantics; migration is separate work.                                                      |
-| Streaming responses | Not implemented; every module awaits a full `generateContent`. `streamGenerateContent` would improve perceived latency on long briefings.                     |
-| TypeScript          | Not used. JSDoc types are in place, which gives editor support without a compile step.                                                                        |
-| Offline             | No service worker; the archive is readable offline, generation is not.                                                                                        |
-| Key custody         | Client-side only. A tiny proxy (Cloud Function / Vercel Edge) is the documented upgrade path.                                                                 |
-| Model id            | Defaults to `gemini-3-flash-preview`, overridable in the dialog, via `config.js` or `window.NEXUS_CONFIG`. Verify availability for your project in AI Studio. |
-| i18n                | UI copy is English-only and inline in the markup.                                                                                                             |
+| Item                | Status / note                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tailwind Play CDN   | Removed — the CSS is now compiled and purged (~31 KB instead of a ~300 KB runtime JIT script).                                                                                                           |
+| Tailwind v4         | Pinned to v3.4 to keep the existing `darkMode: "class"` + palette semantics; migration is separate work.                                                                                                 |
+| Streaming responses | Not implemented; every module awaits a full response. Coarena pads a non-streamed reply that runs past 20 s, so `stream: true` is the documented fix for long briefings.                                 |
+| TypeScript          | Not used. JSDoc types are in place, which gives editor support without a compile step.                                                                                                                   |
+| Offline             | No service worker; the archive is readable offline, generation is not.                                                                                                                                   |
+| Key custody         | Client-side only. `scripts/proxy.mjs` covers CORS locally; an edge function is the documented upgrade path for a hosted key.                                                                             |
+| CORS                | Unknown per gateway: Coarena documents server-side clients only. The bundled proxy is the fallback, and the connection test names it in the error message.                                               |
+| Model id            | Defaults to `gemini-3-8-flash` on Coarena (free plan, 1M context, vision), overridable in the dialog, via `config.js` or `window.NEXUS_CONFIG`. The gateway's own `/models` list is the source of truth. |
+| i18n                | The UI is Persian-only (`lang="fa" dir="rtl"`), with copy inline in the markup and in `core/labels.js`. A second language would mean extracting it.                                                      |

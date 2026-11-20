@@ -9,6 +9,92 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 _Nothing yet — add your entry here under the relevant heading (`Added`,
 `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`)._
 
+## [2.2.0] - 2026-11-20
+
+The model gateway is now pluggable, and **Coarena** is the default: one free key
+fronts 24 models instead of a single vendor.
+
+### Added
+
+- **Coarena gateway** (`https://coarena.ai/api/v1`, model `gemini-3-8-flash`) as the
+  default transport — an OpenAI-compatible Chat Completions client in
+  `src/js/api/openai.js`: `Authorization: Bearer`, inline base64 images, enforced
+  `json_schema` structured output, `Retry-After`-aware backoff, and a 429 carrying
+  `x-should-retry: false` treated as final instead of retried.
+- **A three-field credential form.** The settings dialog now takes the **API key**,
+  the gateway **URL** and the **model** — plus a gateway selector — so pointing
+  NEXUS at OpenRouter, Groq, a local `llama.cpp`/Ollama server or your own proxy is
+  a matter of typing a URL. No code change, no rebuild.
+- **«تست اتصال» — a connection test.** It reads the public `/models` catalogue, then
+  spends a single token on a chat call, and reports latency, the number of models
+  the gateway listed and the model that actually answered. It probes the values
+  _typed into the form_, never persists them, corrects a near-miss model id in place
+  (`gemini-3.8-flash` → `gemini-3-8-flash`), and translates 18 Coarena error codes
+  into Persian advice (`model_api_terms_required`, `insufficient_quota`,
+  `api_key_expired`, `model_not_found`, …).
+- **`src/js/services/provider.js`** — the single place that decides where NEXUS
+  talks to: a `PROVIDERS` registry, per-request credential resolution, a client
+  cached per gateway, and the neutral `NexusRequest` / `NexusResult` contract every
+  module now uses.
+- **`src/js/api/errors.js`** — the shared `NexusApiError`, OpenAI error-envelope
+  parsing and the backoff helper, used by both transports.
+- **`scripts/proxy.mjs` (`npm run proxy`)** — a zero-dependency pass-through proxy
+  that forwards method, headers and body to the gateway and adds CORS headers. It
+  is the documented fallback for a static deployment whose gateway refuses
+  cross-origin browser calls; browsers treat `http://127.0.0.1` as trustworthy, so
+  it also works from an HTTPS page.
+- **Tests:** `tests/openai.test.js` (wire format, retries, error mapping, timeout,
+  CORS diagnosis), `tests/provider.test.js` (routing, credential precedence,
+  connection-test outcomes, model-alias correction) and `tests/proxy.test.js`
+  (pass-through, CORS, preflight, 502 shape, key never logged). 92 → **150 tests**.
+
+### Changed
+
+- **Google AI Studio is now an alternative gateway**, not the only one. Its
+  client keeps the `x-goog-api-key` header and `generateContent` protocol, and it
+  remains the only transport with live web grounding.
+- **Modules speak a neutral request.** `briefing.js`, `matrix.js`, `visual.js` and
+  `comms.js` call `runRequest({ system, messages, images, jsonSchema, grounding })`
+  and read `result.text` / `result.sources` / `result.finishReason`; none imports a
+  transport any more. Chat history is stored provider-neutral (`{ role, text }`).
+- **Grounding is reported honestly.** On a gateway with no web-search tool,
+  Modules 01 and 04 say so in a toast and render no citation card, instead of
+  implying sources that were never fetched.
+- **Cost routing is surfaced.** The answering model comes from the response body,
+  so a gateway that substitutes a cheaper model says which one answered.
+- **Upload limit 10 MB → 8 MB**, matching Coarena's `max_image_bytes: 8388608` for
+  its Gemini models.
+- `api.maxRetries` 4 → **3** (Coarena allows 30 requests/minute, so retries stay
+  modest); `formatModelLabel` rejoins a dotted version (`gemini-3-8-flash` →
+  `GEMINI 3.8 FLASH`); the sidebar engine label now names the gateway
+  (`Coarena · GEMINI 3.8 FLASH`).
+- **Docs rewritten** for the new seam: `DEPLOYMENT.md` §5 (gateway, CORS, proxy,
+  edge-key pattern), `CONFIGURATION.md` (gateway table, model choice, proxy
+  variables, storage schema), `ARCHITECTURE.md` (transport layer, data flows,
+  security model) and `SECURITY.md`.
+
+### Fixed
+
+- **`scripts/verify.mjs` mistook prose for code.** An import scan that matched
+  across newlines parsed the phrase "modules never _import_ a transport" as an
+  `import … from` statement and reported every JSDoc brace in between as a missing
+  export. Comments are now blanked before the import/export/bus scans, and imports
+  are anchored to a statement start.
+- **The credential scan was Google-only.** It now covers Coarena (`coa_…`),
+  Anthropic (`sk-ant-…`) and OpenAI (`sk-…`) key shapes, and scans `docs/`,
+  `public/` and the top-level documentation — not just `src/js/`.
+- A non-absolute stored base URL (`javascript:…`) is discarded instead of being
+  used as an endpoint.
+
+### Security
+
+- The key travels only in an `Authorization: Bearer` header; the connection test
+  never writes to storage; the proxy forwards `Authorization` but never logs it.
+- **Documented:** Coarena stores every prompt and reply sent through its Model API
+  and may license them in datasets, and that cannot be withdrawn. The settings
+  dialog states this next to the gateway selector, and `SECURITY.md` advises against
+  pasting sensitive personal data while that gateway is selected.
+
 ## [2.1.0] - 2026-11-20
 
 The workspace is now Persian and right-to-left, and it is deployed to Vercel.

@@ -10,7 +10,8 @@
  *   2. every relative import resolves to a real file
  *   3. every named import is actually exported by its target module
  *   4. every bus action that is invoked is also registered
- *   5. informational: markup ids that no module references
+ *   5. no real-looking API key is committed anywhere under src/, docs/ or public/
+ *   6. informational: markup ids that no module references
  *
  * Exit code 1 on any error.
  */
@@ -38,6 +39,21 @@ async function walk(dir) {
 }
 
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join("/");
+
+/**
+ * Blanks out block comments, keeping line breaks so reported positions still
+ * make sense.
+ *
+ * Without this, prose such as "modules never import a transport" is parsed as an
+ * `import … from` statement and every JSDoc brace between the two is reported as
+ * a missing export.
+ *
+ * @param {string} code
+ * @returns {string}
+ */
+function withoutBlockComments(code) {
+    return code.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "));
+}
 
 const html = await readFile(HTML, "utf8");
 const jsFiles = await walk(JS_DIR);
@@ -91,7 +107,7 @@ const exportCache = new Map();
  */
 function exportsOf(file) {
     if (exportCache.has(file)) return exportCache.get(file);
-    const code = sources.get(file) || "";
+    const code = withoutBlockComments(sources.get(file) || "");
     const names = new Set();
 
     for (const m of code.matchAll(/export\s+(?:async\s+)?(?:function|class|const|let|var)\s+(\w+)/g)) names.add(m[1]);
@@ -110,8 +126,10 @@ function exportsOf(file) {
     return names;
 }
 
-for (const [file, code] of sources) {
-    for (const m of code.matchAll(/import\s+([\s\S]*?)\s+from\s+["']([^"']+)["']/g)) {
+for (const [file, rawCode] of sources) {
+    const code = withoutBlockComments(rawCode);
+    // Anchored to a statement start, so a stray "import" in prose cannot match.
+    for (const m of code.matchAll(/^\s*import\s+([\s\S]*?)\s+from\s+["']([^"']+)["']/gm)) {
         const clause = m[1];
         const specifier = m[2];
 
@@ -150,7 +168,8 @@ for (const [file, code] of sources) {
 // ---------------------------------------------------------- 4. action bus
 const registered = new Set();
 const invoked = new Map();
-for (const [file, code] of sources) {
+for (const [file, rawCode] of sources) {
+    const code = withoutBlockComments(rawCode);
     for (const m of code.matchAll(/registerAction\(\s*"([^"]+)"/g)) registered.add(m[1]);
     for (const m of code.matchAll(/(?:tryInvokeAction|invokeAction)\(\s*"([^"]+)"/g)) {
         if (!invoked.has(m[1])) invoked.set(m[1], []);
@@ -167,11 +186,68 @@ for (const name of registered) {
 }
 
 // ------------------------------------------------------------- 5. secrets
-for (const [file, code] of sources) {
-    for (const m of code.matchAll(/["'`](AIza[0-9A-Za-z_-]{20,})["'`]/g)) {
-        errors.push(`${rel(file)} appears to contain a hard-coded Google API key (${m[1].slice(0, 8)}…)`);
+/**
+ * Credential shapes that must never be committed. NEXUS is a static app: the
+ * person using it types their own key, so any literal key in the repository is
+ * either a leaked secret or a shared key deployed to a public origin.
+ */
+const SECRET_PATTERNS = [
+    { name: "Coarena API key", re: /\bcoa_[0-9a-f]{16,}\b/g },
+    { name: "Google API key", re: /\bAIza[0-9A-Za-z_-]{20,}\b/g },
+    { name: "Anthropic API key", re: /\bsk-ant-[0-9A-Za-z_-]{16,}\b/g },
+    { name: "OpenAI-style API key", re: /\bsk-(?:proj-)?[0-9A-Za-z_-]{20,}\b/g }
+];
+
+/** Files scanned for credentials — everything a deployment could serve. */
+const SECRET_SCAN_DIRS = ["src", "docs", "public"];
+const SECRET_SCAN_FILES = ["README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"];
+
+/**
+ * @param {string} dir
+ * @returns {Promise<string[]>} every file below `dir`, whatever its extension
+ */
+async function walkAll(dir) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    const files = await Promise.all(
+        entries.map((e) =>
+            e.isDirectory() ? walkAll(path.join(dir, e.name)) : Promise.resolve([path.join(dir, e.name)])
+        )
+    );
+    return files.flat();
+}
+
+const secretTargets = [];
+for (const dir of SECRET_SCAN_DIRS) {
+    try {
+        for (const file of await walkAll(path.join(ROOT, dir))) secretTargets.push(file);
+    } catch {
+        // A missing optional directory is not a verification failure.
     }
 }
+for (const file of SECRET_SCAN_FILES) {
+    try {
+        await readFile(path.join(ROOT, file), "utf8");
+        secretTargets.push(path.join(ROOT, file));
+    } catch {
+        // Not every project ships every community file.
+    }
+}
+
+let secretHits = 0;
+for (const file of secretTargets) {
+    // Comments are scanned too: a key pasted into a JSDoc example is still a leak.
+    const code = sources.get(file) ?? (file.endsWith(".js") ? null : await readFile(file, "utf8").catch(() => null));
+    if (typeof code !== "string") continue;
+
+    for (const { name, re } of SECRET_PATTERNS) {
+        re.lastIndex = 0;
+        for (const m of code.matchAll(re)) {
+            secretHits += 1;
+            errors.push(`${rel(file)} contains a hard-coded ${name} (${m[0].slice(0, 7)}…) — revoke it and remove it`);
+        }
+    }
+}
+info.push(`scanned ${secretTargets.length} files for committed credentials (${secretHits} hit(s))`);
 
 // ---------------------------------------------------------------- report
 console.log(`NEXUS static verification — ${sources.size} modules, ${markupIds.size} markup ids`);

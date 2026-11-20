@@ -7,7 +7,7 @@
 
         <meta
             name="description"
-            content="NEXUS یک محیط کاری اطلاعاتی مبتنی بر هوش مصنوعی و کاملاً سمت‌کلاینت است: بریفینگ‌های OSINT مبتنی بر وب، استخراج ساختاریافتهٔ سیگنال، تحلیل بصری و گفت‌وگو با تحلیل‌گر — با نیروی Gemini API."
+            content="NEXUS یک محیط کاری اطلاعاتی مبتنی بر هوش مصنوعی و کاملاً سمت‌کلاینت است: بریفینگ‌های OSINT مبتنی بر وب، استخراج ساختاریافتهٔ سیگنال، تحلیل بصری و گفت‌وگو با تحلیل‌گر — با نیروی درگاه مدل Coarena."
         />
         <meta name="color-scheme" content="dark light" />
         <meta name="theme-color" content="#070B12" media="(prefers-color-scheme: dark)" />
@@ -18,7 +18,7 @@
         <meta property="og:title" content="NEXUS // پلتفرم اطلاعات هوش مصنوعی" />
         <meta
             property="og:description"
-            content="بریفینگ OSINT، استخراج سیگنال، اطلاعات بصری و ارتباط با تحلیل‌گر — یک محیط کاری ایستا و سمت‌کلاینت بر پایهٔ Gemini."
+            content="بریفینگ OSINT، استخراج سیگنال، اطلاعات بصری و ارتباط با تحلیل‌گر — یک محیط کاری ایستا و سمت‌کلاینت بر پایهٔ درگاه مدل Coarena."
         />
         <meta property="og:url" content="https://nexus-alib11.vercel.app/" />
         <meta property="og:image" content="https://nexus-alib11.vercel.app/og-image.png" />
@@ -27,7 +27,7 @@
         <meta name="twitter:title" content="NEXUS // پلتفرم اطلاعات هوش مصنوعی" />
         <meta
             name="twitter:description"
-            content="بریفینگ OSINT، استخراج سیگنال، اطلاعات بصری و ارتباط با تحلیل‌گر — یک محیط کاری ایستا و سمت‌کلاینت بر پایهٔ Gemini."
+            content="بریفینگ OSINT، استخراج سیگنال، اطلاعات بصری و ارتباط با تحلیل‌گر — یک محیط کاری ایستا و سمت‌کلاینت بر پایهٔ درگاه مدل Coarena."
         />
 
         <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -72,7 +72,7 @@
             <div
                 class="m-4 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-sm font-medium"
             >
-                NEXUS به جاوااسکریپت نیاز دارد — همهٔ ماژول‌ها از مرورگر شما با Gemini API گفت‌وگو می‌کنند.
+                NEXUS به جاوااسکریپت نیاز دارد — همهٔ ماژول‌ها از مرورگر شما با درگاه مدل گفت‌وگو می‌کنند.
             </div>
         </noscript>
 
@@ -1046,7 +1046,7 @@
         <!-- TOAST NOTIFICATION CONTAINER (NO alert() USED)                        -->
         <!-- ===================================================================== -->
         <!-- ===================================================================== -->
-        <!-- ENGINE SETTINGS DIALOG (API key + model)                              -->
+        <!-- ENGINE SETTINGS DIALOG (provider · API key · URL · model · test)       -->
         <!-- ===================================================================== -->
         <div id="apiKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
             <div id="apiKeyModalBackdrop" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
@@ -1064,7 +1064,7 @@
                             اعتبارنامهٔ موتور
                         </p>
                         <h2 id="apiKeyModalTitle" class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                            اتصال به Gemini API
+                            اتصال به درگاه مدل
                         </h2>
                     </div>
                     <button
@@ -1080,41 +1080,66 @@
                 </div>
 
                 <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    NEXUS یک اپ ایستا است: مرورگر شما مستقیماً با Gemini API گفت‌وگو می‌کند. کلید فقط در
+                    NEXUS یک اپ ایستا است: مرورگر شما مستقیماً با درگاه مدل گفت‌وگو می‌کند. کلید، نشانی و مدل تنها در
                     <span class="font-mono" dir="ltr">localStorage</span>
-                    همین مرورگر نگه داشته می‌شود و تنها به
-                    <span class="font-mono" dir="ltr">generativelanguage.googleapis.com</span>
-                    ارسال می‌شود. یک کلید رایگان در
-                    <a
-                        href="https://aistudio.google.com/app/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-cyan-600 dark:text-cyan-400 hover:underline font-medium"
-                    >
-                        Google AI Studio
-                    </a>
-                    .
+                    همین مرورگر نگه داشته می‌شوند و فقط به همان نشانی‌ای فرستاده می‌شوند که خودتان وارد کرده‌اید.
                 </p>
 
+                <!-- Gateway -->
+                <div>
+                    <label
+                        for="apiKeyProviderSelect"
+                        class="block text-xs font-mono uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5"
+                    >
+                        درگاه مدل
+                    </label>
+                    <select
+                        id="apiKeyProviderSelect"
+                        class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
+                    ></select>
+                    <p id="apiKeyProviderNote" class="mt-1.5 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500"></p>
+                </div>
+
+                <!-- 1 · API key -->
                 <div>
                     <label
                         for="apiKeyInput"
                         class="block text-xs font-mono uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5"
                     >
-                        کلید Gemini API
+                        کلید API
                     </label>
                     <input
                         id="apiKeyInput"
                         type="password"
                         autocomplete="off"
                         spellcheck="false"
-                        placeholder="AIza…"
+                        placeholder="coa_…"
                         dir="ltr"
                         class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white font-mono text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all disabled:opacity-60"
                     />
-                    <p id="apiKeyModalHint" class="mt-1.5 text-[11px] font-mono leading-relaxed text-slate-400 dark:text-slate-500"></p>
+                    <p id="apiKeyKeyHint" class="mt-1.5 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500"></p>
                 </div>
 
+                <!-- 2 · Gateway URL -->
+                <div>
+                    <label
+                        for="apiKeyBaseUrlInput"
+                        class="block text-xs font-mono uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5"
+                    >
+                        نشانی درگاه (URL)
+                    </label>
+                    <input
+                        id="apiKeyBaseUrlInput"
+                        type="url"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="https://coarena.ai/api/v1"
+                        dir="ltr"
+                        class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white font-mono text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
+                    />
+                </div>
+
+                <!-- 3 · Model -->
                 <div>
                     <label
                         for="apiKeyModelInput"
@@ -1126,11 +1151,28 @@
                         id="apiKeyModelInput"
                         type="text"
                         spellcheck="false"
-                        placeholder="gemini-3-flash-preview"
+                        list="apiKeyModelOptions"
+                        placeholder="gemini-3-8-flash"
                         dir="ltr"
                         class="w-full px-3.5 py-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700 text-slate-900 dark:text-white font-mono text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
                     />
+                    <datalist id="apiKeyModelOptions"></datalist>
                 </div>
+
+                <!-- Connection test -->
+                <div class="rounded-xl border border-slate-200 dark:border-obsidian-700 bg-slate-50/70 dark:bg-obsidian-850/70 p-3">
+                    <button
+                        id="apiKeyTestBtn"
+                        type="button"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i data-lucide="plug-zap" class="w-3.5 h-3.5"></i>
+                        تست اتصال
+                    </button>
+                    <p id="apiKeyTestResult" role="status" aria-live="polite" class="hidden"></p>
+                </div>
+
+                <p id="apiKeyModalHint" class="text-[11px] font-mono leading-relaxed text-slate-400 dark:text-slate-500"></p>
 
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
                     <button
@@ -1159,7 +1201,7 @@
         ></div>
 
         <!-- ===================================================================== -->
-        <!-- APPLICATION LOGIC & GEMINI API INTEGRATION                            -->
+        <!-- APPLICATION LOGIC & MODEL PROVIDER INTEGRATION                         -->
         <!-- Loaded as ES modules: config → core → services → modules → main       -->
         <!-- ===================================================================== -->
         <script type="module" src="./js/main.js"></script>

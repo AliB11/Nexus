@@ -1,25 +1,34 @@
 /**
- * Engine settings dialog — API key + model selection.
+ * Engine settings dialog — provider, API key, base URL, model, and a
+ * connection test.
  *
  * A static site has no server to hold a secret, so NEXUS asks the person using
- * it for their own key, keeps it in that browser only, and surfaces the current
- * connection state in the sidebar at all times.
+ * it for their own credentials and keeps them in that browser only. The sidebar
+ * always shows which gateway and model are live.
+ *
+ * The three credential fields are independent on purpose: Coarena, OpenRouter or
+ * a self-hosted proxy all speak the same OpenAI protocol, so pointing NEXUS at
+ * one of them is a matter of typing a different URL — no code change.
  */
 import { byId, els } from "../core/dom.js";
 import { registerAction } from "../core/bus.js";
 import { showToast } from "../core/toast.js";
+import { escapeHtml } from "../core/sanitize.js";
 import { config } from "../config.js";
 import {
     clearApiKey,
     getApiKey,
+    getBaseUrl,
     getModel,
+    getProvider,
     hasApiKey,
     isKeyInjected,
     maskKey,
+    providerDefaults,
     saveSettings
 } from "../services/settings.js";
-
-import { formatModelLabel } from "../core/format.js";
+import { PROVIDERS, PROVIDER_ORDER, getProviderDefinition, testConnection } from "../services/provider.js";
+import { formatModelLabel, formatNumber } from "../core/format.js";
 
 /** Chip styling per connection state. */
 const CHIP_STYLES = {
@@ -28,7 +37,17 @@ const CHIP_STYLES = {
     missing: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
 };
 
+/** Result box styling for the connection test. */
+const RESULT_STYLES = {
+    ok: "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+    fail: "border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-300",
+    busy: "border-cyan-500/30 bg-cyan-500/10 text-cyan-800 dark:text-cyan-300"
+};
+
 let lastFocused = null;
+
+/** Model ids offered before the live catalogue has been fetched. */
+let knownModels = [...(config.api.modelSuggestions || [])];
 
 /**
  * Default hint under the key field: where the value lives, in plain words.
@@ -39,12 +58,57 @@ function storedHint() {
 }
 
 /**
+ * Fills the provider `<select>` from the registry, so adding a gateway never
+ * means editing markup.
+ */
+function renderProviderOptions() {
+    if (!els.apiKeyProviderSelect) return;
+    els.apiKeyProviderSelect.innerHTML = PROVIDER_ORDER.map(
+        (id) =>
+            `<option value="${id}">${escapeHtml(PROVIDERS[id].label)} — ${escapeHtml(PROVIDERS[id].description)}</option>`
+    ).join("");
+}
+
+/**
+ * Re-renders the copy that depends on the chosen gateway: notes, placeholders
+ * and the link to where a key is issued.
+ *
+ * @param {string} providerId
+ */
+function renderProviderCopy(providerId) {
+    const definition = getProviderDefinition(providerId);
+    const defaults = providerDefaults(definition.id);
+
+    if (els.apiKeyProviderNote) {
+        els.apiKeyProviderNote.innerHTML = `${escapeHtml(definition.note)} <a href="${definition.docsUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-600 dark:text-cyan-400 underline">مستندات درگاه</a>`;
+    }
+    if (els.apiKeyKeyHint) {
+        els.apiKeyKeyHint.innerHTML = `${escapeHtml(definition.keyHint)} <a href="${definition.keyUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-600 dark:text-cyan-400 underline">دریافت کلید</a>`;
+    }
+    if (els.apiKeyInput) els.apiKeyInput.placeholder = definition.id === "google" ? "AIza…" : "coa_…";
+    if (els.apiKeyBaseUrlInput) els.apiKeyBaseUrlInput.placeholder = defaults.baseUrl;
+    if (els.apiKeyModelInput) els.apiKeyModelInput.placeholder = defaults.model;
+}
+
+/**
+ * Fills the model field's suggestion list.
+ * @param {Array<{ id: string, label?: string }>} models
+ */
+function renderModelOptions(models) {
+    if (!els.apiKeyModelOptions) return;
+    els.apiKeyModelOptions.innerHTML = models
+        .map((entry) => `<option value="${escapeHtml(entry.id)}">${escapeHtml(entry.label || entry.id)}</option>`)
+        .join("");
+}
+
+/**
  * Syncs the sidebar engine read-out with the current settings.
  */
 export function refreshEngineStatus() {
     if (els.engineModelLabel) {
-        els.engineModelLabel.textContent = formatModelLabel(getModel());
-        els.engineModelLabel.title = getModel();
+        const label = `${getProviderDefinition().label} · ${formatModelLabel(getModel())}`;
+        els.engineModelLabel.textContent = label;
+        els.engineModelLabel.title = `${getBaseUrl()} → ${getModel()}`;
     }
 
     const chip = els.apiKeyStatusChip;
@@ -63,6 +127,109 @@ export function refreshEngineStatus() {
 }
 
 /**
+ * Writes a message into the test-result box.
+ *
+ * @param {"ok" | "fail" | "busy"} tone
+ * @param {string} html
+ */
+function setTestResult(tone, html) {
+    const box = els.apiKeyTestResult;
+    if (!box) return;
+    box.className = `mt-2.5 text-xs leading-relaxed rounded-lg border px-3 py-2 ${RESULT_STYLES[tone]}`;
+    box.innerHTML = html;
+    box.classList.remove("hidden");
+}
+
+/** Hides the test-result box. */
+function clearTestResult() {
+    els.apiKeyTestResult?.classList.add("hidden");
+}
+
+/**
+ * Reads the form as it stands — the test must probe what the analyst typed,
+ * not what was saved last time.
+ *
+ * @returns {{ provider: string, apiKey: string, baseUrl: string, model: string }}
+ */
+function readForm() {
+    return {
+        provider: els.apiKeyProviderSelect?.value || getProvider(),
+        apiKey: isKeyInjected() ? getApiKey() : (els.apiKeyInput?.value || "").trim(),
+        baseUrl: (els.apiKeyBaseUrlInput?.value || "").trim(),
+        model: (els.apiKeyModelInput?.value || "").trim()
+    };
+}
+
+/**
+ * Runs the connection test against the form values.
+ */
+async function runConnectionTest() {
+    const button = els.apiKeyTestBtn;
+    const form = readForm();
+
+    if (!form.baseUrl) {
+        setTestResult("fail", "نشانی درگاه خالی است.");
+        els.apiKeyBaseUrlInput?.focus();
+        return;
+    }
+    if (!form.apiKey) {
+        setTestResult("fail", "کلید API خالی است؛ بدون کلید نمی‌توان اتصال را آزمود.");
+        els.apiKeyInput?.focus();
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.dataset.label = button.textContent;
+        button.textContent = "در حال تست…";
+    }
+    setTestResult("busy", `در حال تماس با <span dir="ltr">${escapeHtml(form.baseUrl)}</span> …`);
+
+    try {
+        const result = await testConnection(form);
+
+        // The gateway's own catalogue is the best suggestion list there is.
+        if (result.models?.length) {
+            knownModels = result.models;
+            renderModelOptions(result.models);
+        }
+
+        const latency = `${formatNumber(result.latencyMs)} میلی‌ثانیه`;
+        const models = result.models?.length ? `${formatNumber(result.models.length)} مدل در فهرست درگاه` : "";
+        const meta = [latency, models].filter(Boolean).join(" · ");
+
+        // A near-miss model id is corrected in place, so the analyst can save
+        // straight away instead of retyping it.
+        if (result.suggestedModel && els.apiKeyModelInput) {
+            els.apiKeyModelInput.value = result.suggestedModel;
+        }
+
+        if (result.ok) {
+            setTestResult(
+                "ok",
+                `<span class="font-bold">اتصال برقرار است.</span> ${escapeHtml(result.message)}<br><span class="opacity-80">${escapeHtml(meta)} — مدل پاسخ‌دهنده: </span><span dir="ltr">${escapeHtml(result.model)}</span>`
+            );
+        } else {
+            setTestResult(
+                "fail",
+                `<span class="font-bold">اتصال ناموفق بود.</span> ${escapeHtml(result.message)}${meta ? `<br><span class="opacity-80">${escapeHtml(meta)}</span>` : ""}`
+            );
+        }
+    } catch (err) {
+        setTestResult(
+            "fail",
+            `<span class="font-bold">تست اجرا نشد:</span> ${escapeHtml(err?.message || "خطای نامشخص")}`
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = button.dataset.label || "تست اتصال";
+            delete button.dataset.label;
+        }
+    }
+}
+
+/**
  * Opens the dialog, pre-filled with the stored values.
  * @param {{ reason?: string }} [options]
  */
@@ -71,11 +238,17 @@ export function openSettingsDialog(options = {}) {
 
     lastFocused = document.activeElement;
     const injected = isKeyInjected();
+    const provider = getProvider();
+
+    if (els.apiKeyProviderSelect) els.apiKeyProviderSelect.value = provider;
+    renderProviderCopy(provider);
+    renderModelOptions(knownModels);
 
     els.apiKeyInput.value = injected ? "" : getApiKey();
     els.apiKeyInput.disabled = injected;
-    els.apiKeyInput.placeholder = injected ? "توسط صفحهٔ میزبان تأمین شده است" : "AIza…";
-    els.apiKeyModelInput.value = getModel();
+    if (els.apiKeyBaseUrlInput) els.apiKeyBaseUrlInput.value = getBaseUrl();
+    if (els.apiKeyModelInput) els.apiKeyModelInput.value = getModel();
+
     els.apiKeyClearBtn.disabled = injected || !getApiKey();
     els.apiKeyClearBtn.classList.toggle("opacity-40", els.apiKeyClearBtn.disabled);
 
@@ -89,6 +262,7 @@ export function openSettingsDialog(options = {}) {
         els.apiKeyModalHint.textContent = `${options.reason} ${els.apiKeyModalHint.textContent}`;
     }
 
+    clearTestResult();
     els.apiKeyModal.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     els.apiKeyInput.focus();
@@ -138,25 +312,63 @@ function trapFocus(event) {
 }
 
 /**
- * Persists the dialog inputs.
+ * Persists the dialog inputs after validating them.
  */
 function saveFromDialog() {
-    const model = els.apiKeyModelInput.value.trim();
-    const key = els.apiKeyInput.value.trim();
+    const form = readForm();
 
-    if (!isKeyInjected() && !key && !hasApiKey()) {
+    if (!isKeyInjected() && !form.apiKey && !hasApiKey()) {
         showToast("یک کلید API وارد کنید، یا این پنجره را ببندید تا رابط را بدون اتصال مرور کنید.", "error");
         els.apiKeyInput.focus();
         return;
     }
 
-    saveSettings({ apiKey: isKeyInjected() ? undefined : key, model });
+    if (!/^https?:\/\/[^\s]+$/i.test(form.baseUrl)) {
+        showToast("نشانی درگاه باید با http:// یا https:// شروع شود.", "error");
+        els.apiKeyBaseUrlInput?.focus();
+        return;
+    }
+
+    if (!form.model) {
+        showToast("شناسهٔ مدل را وارد کنید.", "error");
+        els.apiKeyModelInput?.focus();
+        return;
+    }
+
+    saveSettings({
+        provider: form.provider,
+        apiKey: isKeyInjected() ? undefined : form.apiKey,
+        baseUrl: form.baseUrl,
+        model: form.model
+    });
     refreshEngineStatus();
     closeSettingsDialog();
     showToast(
-        key && !isKeyInjected() ? "کلید API در همین مرورگر ذخیره شد." : "تنظیمات موتور به‌روزرسانی شد.",
+        !isKeyInjected() && form.apiKey ? "تنظیمات درگاه در همین مرورگر ذخیره شد." : "تنظیمات موتور به‌روزرسانی شد.",
         "success"
     );
+}
+
+/**
+ * Switching gateway resets the URL and model to that gateway's defaults — but
+ * only when the current values still belong to the previous one, so a custom
+ * proxy URL typed by hand is never thrown away.
+ */
+function handleProviderChange() {
+    const next = els.apiKeyProviderSelect.value;
+    const previous = getProvider();
+    if (next === previous) return;
+
+    renderProviderCopy(next);
+    clearTestResult();
+
+    const previousDefaults = providerDefaults(previous);
+    const nextDefaults = providerDefaults(next);
+    const baseUrl = els.apiKeyBaseUrlInput.value.trim();
+    const model = els.apiKeyModelInput.value.trim();
+
+    if (!baseUrl || baseUrl === previousDefaults.baseUrl) els.apiKeyBaseUrlInput.value = nextDefaults.baseUrl;
+    if (!model || model === previousDefaults.model) els.apiKeyModelInput.value = nextDefaults.model;
 }
 
 /**
@@ -166,9 +378,15 @@ function saveFromDialog() {
 export function initSettingsDialog() {
     registerAction("apikey:prompt", () => openSettingsDialog({ reason: "این درخواست به اعتبارنامه نیاز دارد." }));
 
+    renderProviderOptions();
+    renderProviderCopy(getProvider());
+    renderModelOptions(knownModels);
+
     els.apiKeySettingsBtn.addEventListener("click", () => {
         isSettingsDialogOpen() ? closeSettingsDialog() : openSettingsDialog();
     });
+    els.apiKeyProviderSelect?.addEventListener("change", handleProviderChange);
+    els.apiKeyTestBtn?.addEventListener("click", runConnectionTest);
     els.apiKeySaveBtn.addEventListener("click", saveFromDialog);
     els.apiKeyCancelBtn.addEventListener("click", closeSettingsDialog);
     els.apiKeyClearBtn.addEventListener("click", () => {
@@ -181,12 +399,16 @@ export function initSettingsDialog() {
 
     byId("apiKeyModalBackdrop")?.addEventListener("click", closeSettingsDialog);
 
-    els.apiKeyInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            saveFromDialog();
-        }
-    });
+    // Enter saves from any field, except the model field where it may be picking
+    // a suggestion from the datalist.
+    for (const field of [els.apiKeyInput, els.apiKeyBaseUrlInput, els.apiKeyModelInput]) {
+        field?.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                saveFromDialog();
+            }
+        });
+    }
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") closeSettingsDialog();
