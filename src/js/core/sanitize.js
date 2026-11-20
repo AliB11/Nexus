@@ -15,6 +15,25 @@ export function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
+/**
+ * Reverses `escapeHtml()`.
+ *
+ * Only used on values that were escaped by this module moments earlier — for
+ * example a Markdown link URL, which must be decoded before `safeUrl()` can
+ * parse it. Never use it on raw, untrusted input.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+export function unescapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&#039;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&gt;/g, ">")
+        .replace(/&lt;/g, "<")
+        .replace(/&amp;/g, "&");
+}
+
 /** URL schemes that may be rendered as clickable links. */
 const SAFE_URL_SCHEMES = ["http:", "https:", "mailto:"];
 

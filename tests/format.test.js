@@ -4,7 +4,9 @@ import assert from "node:assert/strict";
 import {
     formatCharacterCount,
     formatFileSize,
+    formatMaxImageSize,
     formatModelLabel,
+    formatNumber,
     formatUtcClock,
     formatUtcTimestamp
 } from "../src/js/core/format.js";
@@ -38,7 +40,18 @@ test("formatFileSize scales units and clamps bad input", () => {
     assert.equal(formatFileSize(Number.NaN), "0 KB");
 });
 
-test("formatCharacterCount labels the matrix textarea", () => {
-    assert.equal(formatCharacterCount(0), "0 characters");
-    assert.equal(formatCharacterCount(1234), "1234 characters");
+test("formatCharacterCount labels the matrix textarea in Persian digits", () => {
+    assert.equal(formatCharacterCount(0), "۰ نویسه");
+    assert.equal(formatCharacterCount(1234), "۱٬۲۳۴ نویسه");
+});
+
+test("formatNumber renders Persian digits and degrades without fa-IR locale data", () => {
+    assert.equal(formatNumber(0), "۰");
+    assert.equal(formatNumber(10), "۱۰");
+    assert.equal(formatNumber(Number.NaN), "۰", "non-finite input must not print NaN");
+    assert.equal(formatNumber(Number.POSITIVE_INFINITY), "۰");
+});
+
+test("formatMaxImageSize states the upload ceiling in megabytes", () => {
+    assert.equal(formatMaxImageSize(10 * 1024 * 1024), "حجم تصویر باید کمتر از ۱۰ مگابایت باشد.");
 });

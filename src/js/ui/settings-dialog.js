@@ -31,6 +31,14 @@ const CHIP_STYLES = {
 let lastFocused = null;
 
 /**
+ * Default hint under the key field: where the value lives, in plain words.
+ * @returns {string}
+ */
+function storedHint() {
+    return `فقط در همین مرورگر ذخیره می‌شود (localStorage → "${config.storage.settings}").`;
+}
+
+/**
  * Syncs the sidebar engine read-out with the current settings.
  */
 export function refreshEngineStatus() {
@@ -43,14 +51,14 @@ export function refreshEngineStatus() {
     if (!chip) return;
 
     if (isKeyInjected()) {
-        chip.textContent = "INJECTED";
-        chip.className = `text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.injected}`;
+        chip.textContent = "تزریق‌شده";
+        chip.className = `text-[10px] font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.injected}`;
     } else if (hasApiKey()) {
-        chip.textContent = "SET";
-        chip.className = `text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.ready}`;
+        chip.textContent = "تنظیم‌شده";
+        chip.className = `text-[10px] font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.ready}`;
     } else {
-        chip.textContent = "MISSING";
-        chip.className = `text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.missing}`;
+        chip.textContent = "ناموجود";
+        chip.className = `text-[10px] font-bold px-1.5 py-0.5 rounded-md ${CHIP_STYLES.missing}`;
     }
 }
 
@@ -66,16 +74,16 @@ export function openSettingsDialog(options = {}) {
 
     els.apiKeyInput.value = injected ? "" : getApiKey();
     els.apiKeyInput.disabled = injected;
-    els.apiKeyInput.placeholder = injected ? "Provided by the host page" : "AIza…";
+    els.apiKeyInput.placeholder = injected ? "توسط صفحهٔ میزبان تأمین شده است" : "AIza…";
     els.apiKeyModelInput.value = getModel();
     els.apiKeyClearBtn.disabled = injected || !getApiKey();
     els.apiKeyClearBtn.classList.toggle("opacity-40", els.apiKeyClearBtn.disabled);
 
     els.apiKeyModalHint.textContent = injected
-        ? "A key was injected by the host page and takes precedence over anything stored here."
+        ? "یک کلید از سوی صفحهٔ میزبان تزریق شده و بر هر مقدار ذخیره‌شده در این مرورگر اولویت دارد."
         : getApiKey()
-          ? `Stored in this browser only: ${maskKey(getApiKey())}`
-          : `Stored in this browser only (localStorage → "${config.storage.settings}").`;
+          ? `فقط در همین مرورگر ذخیره شده: ${maskKey(getApiKey())}`
+          : storedHint();
 
     if (options.reason) {
         els.apiKeyModalHint.textContent = `${options.reason} ${els.apiKeyModalHint.textContent}`;
@@ -137,7 +145,7 @@ function saveFromDialog() {
     const key = els.apiKeyInput.value.trim();
 
     if (!isKeyInjected() && !key && !hasApiKey()) {
-        showToast("Enter an API key, or close this dialog to browse the UI offline.", "error");
+        showToast("یک کلید API وارد کنید، یا این پنجره را ببندید تا رابط را بدون اتصال مرور کنید.", "error");
         els.apiKeyInput.focus();
         return;
     }
@@ -145,7 +153,10 @@ function saveFromDialog() {
     saveSettings({ apiKey: isKeyInjected() ? undefined : key, model });
     refreshEngineStatus();
     closeSettingsDialog();
-    showToast(key && !isKeyInjected() ? "API key saved to this browser." : "Engine settings updated.", "success");
+    showToast(
+        key && !isKeyInjected() ? "کلید API در همین مرورگر ذخیره شد." : "تنظیمات موتور به‌روزرسانی شد.",
+        "success"
+    );
 }
 
 /**
@@ -153,7 +164,7 @@ function saveFromDialog() {
  * the API client triggers when a request is attempted without credentials.
  */
 export function initSettingsDialog() {
-    registerAction("apikey:prompt", () => openSettingsDialog({ reason: "A request needs credentials." }));
+    registerAction("apikey:prompt", () => openSettingsDialog({ reason: "این درخواست به اعتبارنامه نیاز دارد." }));
 
     els.apiKeySettingsBtn.addEventListener("click", () => {
         isSettingsDialogOpen() ? closeSettingsDialog() : openSettingsDialog();
@@ -164,8 +175,8 @@ export function initSettingsDialog() {
         clearApiKey();
         els.apiKeyInput.value = "";
         refreshEngineStatus();
-        showToast("Stored API key removed from this browser.", "info");
-        els.apiKeyModalHint.textContent = `Stored in this browser only (localStorage → "${config.storage.settings}").`;
+        showToast("کلید API ذخیره‌شده از این مرورگر حذف شد.", "info");
+        els.apiKeyModalHint.textContent = storedHint();
     });
 
     byId("apiKeyModalBackdrop")?.addEventListener("click", closeSettingsDialog);

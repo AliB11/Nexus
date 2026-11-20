@@ -131,7 +131,7 @@ test("the header clock is running and shows a UTC timestamp", () => {
 // --------------------------------------------------------- first-run dialog
 test("first run without a key opens the settings dialog and flags the chip", () => {
     assert.ok(!els.apiKeyModal.classList.contains("hidden"), "dialog should be open on first run");
-    assert.equal(els.apiKeyStatusChip.textContent, "MISSING");
+    assert.equal(els.apiKeyStatusChip.textContent, "ناموجود");
     assert.ok(els.engineModelLabel.textContent.length > 0, "engine label must be populated");
     assert.match(els.apiKeyModalHint.textContent, /localStorage/);
 });
@@ -142,7 +142,7 @@ test("saving a key through the dialog persists it and updates the chip", () => {
     click(els.apiKeySaveBtn);
 
     assert.ok(els.apiKeyModal.classList.contains("hidden"), "dialog should close after save");
-    assert.equal(els.apiKeyStatusChip.textContent, "SET");
+    assert.equal(els.apiKeyStatusChip.textContent, "تنظیم‌شده");
     assert.equal(els.engineModelLabel.textContent, "GEMINI BOOT MODEL");
 
     const stored = JSON.parse(localStorage.getItem("nexus_settings_v1"));
@@ -158,11 +158,15 @@ test("clicking a tab swaps panels and moves the active styling", () => {
     assert.equal(state.activeTab, "matrix");
     assert.ok(!document.getElementById("panel-matrix").classList.contains("hidden"));
     assert.ok(document.getElementById("panel-briefing").classList.contains("hidden"));
-    assert.match(matrixTab.className, /bg-cyan-500\/10/);
+    assert.match(matrixTab.className, /nav-tab-active/, "active tab styling comes from .nav-tab-active");
+    assert.equal(matrixTab.getAttribute("aria-current"), "page");
 
     const briefingTab = [...els.navTabs].find((btn) => btn.dataset.tab === "briefing");
     click(briefingTab);
     assert.equal(state.activeTab, "briefing");
+    assert.equal(briefingTab.getAttribute("aria-current"), "page");
+    assert.equal(matrixTab.getAttribute("aria-current"), null, "only one tab may be current");
+    assert.ok(!matrixTab.className.includes("nav-tab-active"));
 });
 
 test("the theme toggle flips the dark class and persists the choice", () => {
@@ -175,43 +179,110 @@ test("the theme toggle flips the dark class and persists the choice", () => {
 });
 
 test("the mobile drawer opens and closes", () => {
+    assert.ok(els.sidebar.classList.contains("drawer-closed"), "the drawer starts closed on small screens");
+    assert.equal(els.mobileMenuBtn.getAttribute("aria-expanded"), "false");
+
     click(els.mobileMenuBtn);
-    assert.ok(!els.sidebar.classList.contains("-translate-x-full"));
+    assert.ok(!els.sidebar.classList.contains("drawer-closed"));
     assert.ok(!els.sidebarBackdrop.classList.contains("hidden"));
+    assert.equal(els.mobileMenuBtn.getAttribute("aria-expanded"), "true");
+
     click(els.sidebarBackdrop);
-    assert.ok(els.sidebar.classList.contains("-translate-x-full"));
+    assert.ok(els.sidebar.classList.contains("drawer-closed"));
+    assert.equal(els.mobileMenuBtn.getAttribute("aria-expanded"), "false");
 });
 
-// ------------------------------------------------------- module interactions
-test("Module 02 sample loader fills the textarea and the character counter", () => {
+test("the shell is Persian and right-to-left", () => {
+    const root = document.documentElement;
+    assert.equal(root.getAttribute("lang"), "fa");
+    assert.equal(root.getAttribute("dir"), "rtl");
+
+    for (const btn of els.navTabs) {
+        assert.match(btn.className, /nav-tab/);
+    }
+});
+
+test("no physical left/right utility survives in the markup or the JS", async () => {
+    // Tailwind's physical utilities (pl-4, left-0, text-left, rounded-tl-none,
+    // translate-x-full …) do not mirror when `dir` flips. NEXUS must use the
+    // logical forms (ps-4, start-0, text-start, rounded-ss-none) instead, so
+    // the layout follows the document direction.
+    const physical = [
+        /^left-/,
+        /^right-/,
+        /^p[lr]-/,
+        /^m[lr]-/,
+        /^translate-x-/,
+        /^space-x-/,
+        /^border-[lr](-\d+(\.\d+)?)?$/,
+        /^rounded-[lr](-.+)?$/,
+        /^rounded-[tb][lr](-.+)?$/,
+        /^text-(left|right)$/
+    ];
+
+    const offenders = new Set();
+    const scan = (source, isClassAttribute) => {
+        const candidates = isClassAttribute
+            ? [...source.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/))
+            : [...source.matchAll(/["'`]([^"'`]*?)["'`]/g)].flatMap((m) => m[1].split(/\s+/));
+
+        for (const raw of candidates) {
+            if (!raw) continue;
+            // Drop responsive / state / direction variants: `sm:hover:pl-4` → `pl-4`.
+            const utility = raw.slice(raw.lastIndexOf(":") + 1);
+            if (physical.some((re) => re.test(utility))) offenders.add(raw);
+        }
+    };
+
+    const markup = await readFile(new URL("../src/index.html", import.meta.url), "utf8");
+    scan(markup, true);
+
+    const { readdir, readFile: read } = await import("node:fs/promises");
+    const walk = async (dirUrl) => {
+        for (const entry of await readdir(dirUrl, { withFileTypes: true })) {
+            // Directories need the trailing slash or `new URL()` resolves their
+            // children one level too high.
+            const full = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, dirUrl);
+            if (entry.isDirectory()) await walk(full);
+            else if (entry.name.endsWith(".js")) scan(await read(full, "utf8"), false);
+        }
+    };
+    await walk(new URL("../src/js/", import.meta.url));
+
+    assert.deepEqual([...offenders].sort(), [], "physical direction utilities must be replaced with logical ones");
+});
+
+test("Module 02 sample loader fills the textarea and the character counter", async () => {
     click(els.loadSampleTextBtn);
-    assert.match(els.matrixInput.value, /FIELD REPORT/);
-    assert.equal(els.matrixCharCount.textContent, `${els.matrixInput.value.length} characters`);
+    assert.match(els.matrixInput.value, /گزارش میدانی/, "the sample note is Persian");
+    const { formatCharacterCount } = await import("../src/js/core/format.js");
+    assert.equal(els.matrixCharCount.textContent, formatCharacterCount(els.matrixInput.value.length));
+    assert.match(els.matrixCharCount.textContent, /نویسه$/);
 });
 
 test("Module 04 clears its transcript and history", () => {
     state.chatHistory.push({ role: "user", parts: [{ text: "stale" }] });
     click(els.clearChatBtn);
     assert.deepEqual(state.chatHistory, []);
-    assert.match(els.chatMessages.textContent, /Session Reset/);
+    assert.match(els.chatMessages.textContent, /بازنشانی شد/);
 });
 
 test("Module 03 rejects a non-image upload with a toast, not an exception", async () => {
     const { handleImageFile } = await import("../src/js/modules/visual.js");
 
     handleImageFile({ name: "report.pdf", type: "application/pdf", size: 2048 });
-    await waitFor(() => els.toastContainer.textContent.includes("PNG, JPG, or WEBP"), "the format toast");
+    await waitFor(() => els.toastContainer.textContent.includes("PNG، JPG یا WEBP"), "the format toast");
     assert.equal(state.visualImage, null, "an invalid file must not be staged");
 
     handleImageFile({ name: "huge.png", type: "image/png", size: 11 * 1024 * 1024 });
-    await waitFor(() => els.toastContainer.textContent.includes("smaller than"), "the size toast");
+    await waitFor(() => els.toastContainer.textContent.includes("کمتر از"), "the size toast");
     assert.equal(state.visualImage, null, "an oversized file must not be staged");
 });
 
 test("the apikey:prompt bus action opens and closes the dialog", () => {
     invokeAction("apikey:prompt");
     assert.ok(!els.apiKeyModal.classList.contains("hidden"));
-    assert.match(els.apiKeyModalHint.textContent, /needs credentials/);
+    assert.match(els.apiKeyModalHint.textContent, /اعتبارنامه/);
     click(els.apiKeyCancelBtn);
     assert.ok(els.apiKeyModal.classList.contains("hidden"));
 });
@@ -282,30 +353,30 @@ test("Module 01 renders a briefing and archives it as a dossier", async () => {
     await waitFor(() => !els.briefingOutput.classList.contains("hidden"), "the briefing output to appear");
 
     assert.equal(els.briefingResultTitle.textContent, "Semiconductor supply chain");
-    assert.equal(els.briefingBadgeFocus.textContent, "MARKET & COMPETITIVE");
+    assert.equal(els.briefingBadgeFocus.textContent, "بازار و رقابت", "the stored enum is shown in Persian");
     assert.match(els.briefingContent.innerHTML, /<h3[^>]*>Executive Summary<\/h3>/);
     assert.match(els.briefingContent.innerHTML, /list-decimal/, "numbered actions become a list");
     assert.match(els.briefingTimestamp.textContent, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
     assert.ok(!els.briefingSourcesCard.classList.contains("hidden"));
-    assert.equal(els.sourcesCountBadge.textContent, "1 VERIFIED");
+    assert.equal(els.sourcesCountBadge.textContent, "۱ منبع تأییدشده");
     assert.ok(els.briefingSourcesGrid.innerHTML.includes("Chip Watch"));
 
     // Archive it
     click(els.saveDossierBtn);
     assert.equal(state.dossiers.length, 1);
-    assert.equal(els.dossierCount.textContent, "1");
+    assert.equal(els.dossierCount.textContent, "۱");
     assert.match(els.dossierList.textContent, /Semiconductor supply chain/);
     assert.equal(JSON.parse(localStorage.getItem("nexus_intel_dossiers_v1")).length, 1);
 
     // Hand the same briefing to Module 02 through the bus
     click(els.sendToMatrixBtn);
     assert.equal(state.activeTab, "matrix");
-    assert.match(els.matrixInput.value, /^TOPIC: Semiconductor supply chain/);
+    assert.match(els.matrixInput.value, /^موضوع: Semiconductor supply chain/);
 
     // The hand-off auto-submits Module 02. A Markdown briefing is not valid JSON,
     // so the guarded parse must fail cleanly instead of throwing.
     await waitFor(() => bannerText().length > 0, "the matrix module to report invalid JSON");
-    assert.match(bannerText(), /valid JSON/);
+    assert.match(bannerText(), /JSON معتبر/);
     click(els.dismissErrorBtn);
     assert.equal(bannerText(), "");
     assert.ok(els.matrixLoader.classList.contains("hidden"), "the loader must be hidden after a failure");
@@ -324,7 +395,7 @@ test("a failed request surfaces in the banner and rolls the chat turn back", asy
     submit(els.chatForm);
 
     await waitFor(() => bannerText().length > 0, "the error banner to appear");
-    assert.match(bannerText(), /status 400/);
+    assert.match(bannerText(), /وضعیت 400/);
     assert.equal(state.chatHistory.length, before, "the failed turn must be rolled back");
 
     click(els.dismissErrorBtn);

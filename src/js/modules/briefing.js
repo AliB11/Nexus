@@ -14,14 +14,16 @@ import { copyToClipboard } from "../core/clipboard.js";
 import { hideError, showError, showToast } from "../core/toast.js";
 import { blockReason, extractSources, firstText } from "../api/gemini.js";
 import { registerAction, invokeAction } from "../core/bus.js";
-import { formatUtcTimestamp } from "../core/format.js";
+import { formatNumber, formatUtcTimestamp } from "../core/format.js";
+import { focusLabel } from "../core/labels.js";
 import { BRIEFING_SYSTEM_PROMPT, buildBriefingQuery } from "../core/prompts.js";
 import { persistDossiers } from "../services/dossiers.js";
+
 export function renderBriefing(dossier) {
     els.briefingEmpty.classList.add("hidden");
     els.briefingOutput.classList.remove("hidden");
 
-    els.briefingBadgeFocus.textContent = dossier.focus.toUpperCase();
+    els.briefingBadgeFocus.textContent = focusLabel(dossier.focus);
     els.briefingTimestamp.textContent = dossier.timestamp;
     els.briefingResultTitle.textContent = dossier.topic;
     els.briefingContent.innerHTML = renderMarkdown(dossier.rawText);
@@ -29,7 +31,7 @@ export function renderBriefing(dossier) {
     // Render verified web citations
     if (dossier.sources && dossier.sources.length > 0) {
         els.briefingSourcesCard.classList.remove("hidden");
-        els.sourcesCountBadge.textContent = `${dossier.sources.length} VERIFIED`;
+        els.sourcesCountBadge.textContent = `${formatNumber(dossier.sources.length)} منبع تأییدشده`;
         els.briefingSourcesGrid.innerHTML = dossier.sources
             .map(
                 (src, idx) => `
@@ -37,9 +39,9 @@ export function renderBriefing(dossier) {
                     class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-obsidian-850 hover:bg-cyan-500/10 border border-slate-200 dark:border-obsidian-700 hover:border-cyan-500/30 transition-all group">
                     <div class="min-w-0">
                         <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 truncate">${escapeHtml(src.title)}</div>
-                        <div class="text-[11px] font-mono text-slate-400 truncate">${escapeHtml(src.uri)}</div>
+                        <div dir="ltr" class="text-[11px] font-mono text-slate-400 truncate">${escapeHtml(src.uri)}</div>
                     </div>
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-obsidian-800 text-slate-500 shrink-0">#${idx + 1}</span>
+                    <span dir="ltr" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-obsidian-800 text-slate-500 shrink-0">#${idx + 1}</span>
                 </a>
             `
             )
@@ -81,8 +83,8 @@ export async function handleBriefingSubmit(e) {
             const blocked = blockReason(result);
             throw new Error(
                 blocked
-                    ? `The model returned no text (finish reason: ${blocked}). Try a narrower topic.`
-                    : "No intelligence synthesis returned from the model. Please refine your query."
+                    ? `مدل هیچ متنی برنگرداند (دلیل پایان: ${blocked}). موضوع را محدودتر کنید.`
+                    : "مدل هیچ گزارش اطلاعاتی تولید نکرد. پرسش را دقیق‌تر کنید."
             );
         }
 
@@ -101,7 +103,7 @@ export async function handleBriefingSubmit(e) {
         state.currentBriefing = dossier;
         renderBriefing(dossier);
     } catch (err) {
-        showError(`Briefing generation failed: ${err.message}`);
+        showError(`تولید بریفینگ ناموفق بود: ${err.message}`);
         els.briefingEmpty.classList.remove("hidden");
     } finally {
         els.briefingLoader.classList.add("hidden");
@@ -128,7 +130,7 @@ export function initBriefing() {
 
     els.copyBriefingBtn.addEventListener("click", () => {
         if (!state.currentBriefing) return;
-        const fullReport = `# ${state.currentBriefing.topic}\nFocus: ${state.currentBriefing.focus} | ${state.currentBriefing.timestamp}\n\n${state.currentBriefing.rawText}`;
+        const fullReport = `# ${state.currentBriefing.topic}\nتمرکز: ${focusLabel(state.currentBriefing.focus)} | ${state.currentBriefing.timestamp}\n\n${state.currentBriefing.rawText}`;
         copyToClipboard(fullReport);
     });
 
@@ -136,12 +138,12 @@ export function initBriefing() {
         if (!state.currentBriefing) return;
         const exists = state.dossiers.some((d) => d.id === state.currentBriefing.id);
         if (exists) {
-            showToast("Dossier is already in your archive.", "info");
+            showToast("این پرونده پیش‌تر در بایگانی شما ذخیره شده است.", "info");
             return;
         }
         state.dossiers.unshift(state.currentBriefing);
         persistDossiers();
-        showToast("Dossier archived locally.", "success");
+        showToast("پرونده به‌صورت محلی بایگانی شد.", "success");
     });
 
     els.sendToMatrixBtn.addEventListener("click", () => {

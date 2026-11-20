@@ -4,6 +4,12 @@
  * Converts unstructured text into a strict JSON object using Gemini structured
  * output (`responseMimeType` + `responseSchema`), then renders threat level,
  * sentiment, confidence, entities, opportunities, risks and action items.
+ *
+ * LANGUAGE: the schema keeps English field names and English enum values for
+ * `threatLevel`, `sentiment` and `category` — those are part of the API
+ * contract and of any archived data. `core/labels.js` translates them at render
+ * time, while every free-text field is requested in Persian by
+ * `buildMatrixPrompt()`.
  */
 import { els } from "../core/dom.js";
 import { api } from "../api/client.js";
@@ -14,79 +20,38 @@ import { registerAction } from "../core/bus.js";
 import { switchTab } from "../core/navigation.js";
 import { buildMatrixPrompt } from "../core/prompts.js";
 import { formatCharacterCount } from "../core/format.js";
+import { categoryLabel, sentimentLabel, threatLabel } from "../core/labels.js";
+import { MATRIX_RESPONSE_SCHEMA } from "../core/schema.js";
 
-/**
- * Structured-output contract enforced by the Gemini API.
- * Keeping it as a constant makes the extraction schema reviewable at a glance.
- */
-export const MATRIX_RESPONSE_SCHEMA = {
-    type: "OBJECT",
-    properties: {
-        headline: { type: "STRING" },
-        threatLevel: { type: "STRING", description: "One of: Low, Moderate, Elevated, Critical" },
-        sentiment: { type: "STRING", description: "One of: Positive, Neutral, Negative, Mixed" },
-        confidenceScore: { type: "NUMBER", description: "Confidence score from 0 to 100" },
-        entities: {
-            type: "ARRAY",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    name: { type: "STRING" },
-                    category: {
-                        type: "STRING",
-                        description: "Organization, Person, Location, Technology, or Regulation"
-                    },
-                    relevance: { type: "STRING" }
-                },
-                propertyOrdering: ["name", "category", "relevance"]
-            }
-        },
-        strengthsOrOpportunities: {
-            type: "ARRAY",
-            items: { type: "STRING" }
-        },
-        risksOrThreats: {
-            type: "ARRAY",
-            items: { type: "STRING" }
-        },
-        actionItems: {
-            type: "ARRAY",
-            items: { type: "STRING" }
-        }
-    },
-    propertyOrdering: [
-        "headline",
-        "threatLevel",
-        "sentiment",
-        "confidenceScore",
-        "entities",
-        "strengthsOrOpportunities",
-        "risksOrThreats",
-        "actionItems"
-    ]
-};
+// Re-exported so `modules/matrix.js` remains the module's public surface.
+export { MATRIX_RESPONSE_SCHEMA };
+
+/** A representative Persian intelligence note for the «load sample» button. */
+export const SAMPLE_FIELD_NOTE = `گزارش میدانی // سه‌ماههٔ چهارم — لجستیک دریایی و نیمه‌رسانا
+تراکم بنادر در hubهای ترانشیپ جنوب‌شرقی آسیا به‌دلیل تغییر مسیر ترافیک کانتینری و تأخیرهای فصلی آب‌وهوا، ۱۴ درصد نسبت به ماه قبل افزایش یافت. تأمین‌کنندگان اصلی ریخته‌گری در تایوان و کرهٔ جنوبی از خروجی پایدار ویفر گزارش می‌دهند، اما زمان تحویل بسته‌بندی پیشرفته همچنان ۶ تا ۸ هفته تمدید شده است. هم‌زمان، شرکت‌های اتوماسیون صنعتی اروپا در حال تسریع توافق‌های تأمین دوگانه با تولیدکنندگان قطعه در آمریکای شمالی و ژاپن هستند تا وابستگی به یک دالان واحد را کاهش دهند. انتظار می‌رود ممیزی‌های مقرراتی کنترل صادرات فرامرزی در سه‌ماههٔ اول سخت‌گیرانه‌تر شود و بار انطباق را برای یکپارچه‌سازان لجستیک میان‌رده افزایش دهد، در حالی که به نفع بازیگران یکپارچهٔ سطح یک تمام می‌شود.`;
+
 export function renderMatrixResult(data) {
     els.matrixOutput.classList.remove("hidden");
 
     // Threat Level Badge Styling
-    const threat = (data.threatLevel || "Moderate").toUpperCase();
+    const threat = String(data.threatLevel || "Moderate").toUpperCase();
     const threatStyles = {
         LOW: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30",
         MODERATE: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30",
         ELEVATED: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30",
         CRITICAL: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
     };
-    els.matrixThreatBadge.className = `mt-2 inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-bold tracking-wider ${threatStyles[threat] || threatStyles.MODERATE}`;
-    els.matrixThreatBadge.textContent = threat;
+    els.matrixThreatBadge.className = `mt-2 inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold ${threatStyles[threat] || threatStyles.MODERATE}`;
+    els.matrixThreatBadge.textContent = threatLabel(threat);
 
     // Sentiment & Confidence
-    els.matrixSentiment.textContent = data.sentiment || "Neutral";
+    els.matrixSentiment.textContent = sentimentLabel(data.sentiment);
     const confidence = Math.max(0, Math.min(100, Math.round(Number(data.confidenceScore) || 75)));
     els.matrixConfidenceVal.textContent = `${confidence}%`;
     els.matrixConfidenceBar.style.width = `${confidence}%`;
 
     // Headline
-    els.matrixHeadline.textContent = data.headline || "Structured Signal Analysis";
+    els.matrixHeadline.textContent = data.headline || "تحلیل ساختاریافتهٔ سیگنال";
 
     // Entities
     const entities = Array.isArray(data.entities) ? data.entities : [];
@@ -97,14 +62,14 @@ export function renderMatrixResult(data) {
             <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-obsidian-850 border border-slate-200 dark:border-obsidian-700">
                 <div class="flex items-center justify-between gap-2 mb-1">
                     <span class="font-semibold text-sm text-slate-900 dark:text-white truncate">${escapeHtml(ent.name)}</span>
-                    <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-[10px] font-mono uppercase shrink-0">${escapeHtml(ent.category)}</span>
+                    <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 text-[10px] shrink-0">${escapeHtml(categoryLabel(ent.category))}</span>
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${escapeHtml(ent.relevance)}</p>
             </div>
         `
               )
               .join("")
-        : `<p class="text-xs text-slate-400 col-span-full">No distinct entities detected.</p>`;
+        : `<p class="text-xs text-slate-400 col-span-full">نهاد متمایزی شناسایی نشد.</p>`;
 
     // Opportunities
     const opps = Array.isArray(data.strengthsOrOpportunities) ? data.strengthsOrOpportunities : [];
@@ -165,8 +130,8 @@ export async function handleMatrixSubmit(e) {
             const blocked = blockReason(result);
             throw new Error(
                 blocked
-                    ? `The model blocked this extraction (finish reason: ${blocked}).`
-                    : "Structured extraction returned empty data."
+                    ? `مدل این استخراج را مسدود کرد (دلیل پایان: ${blocked}).`
+                    : "استخراج ساختاریافته دادهٔ خالی برگرداند."
             );
         }
 
@@ -174,11 +139,11 @@ export async function handleMatrixSubmit(e) {
         try {
             parsed = JSON.parse(jsonText);
         } catch {
-            throw new Error("The model did not return valid JSON. Please retry the extraction.");
+            throw new Error("مدل JSON معتبر برنگرداند. استخراج را دوباره تلاش کنید.");
         }
         renderMatrixResult(parsed);
     } catch (err) {
-        showError(`Signal extraction failed: ${err.message}`);
+        showError(`استخراج سیگنال ناموفق بود: ${err.message}`);
     } finally {
         els.matrixLoader.classList.add("hidden");
         els.extractMatrixBtn.disabled = false;
@@ -190,7 +155,7 @@ export async function handleMatrixSubmit(e) {
  */
 export function initMatrix() {
     registerAction("matrix:runFromText", (briefing) => {
-        els.matrixInput.value = `TOPIC: ${briefing.topic}\n\n${briefing.rawText}`;
+        els.matrixInput.value = `موضوع: ${briefing.topic}\n\n${briefing.rawText}`;
         els.matrixCharCount.textContent = formatCharacterCount(els.matrixInput.value.length);
         switchTab("matrix");
         els.matrixForm.dispatchEvent(new Event("submit"));
@@ -201,8 +166,8 @@ export function initMatrix() {
         els.matrixCharCount.textContent = formatCharacterCount(els.matrixInput.value.length);
     });
     els.loadSampleTextBtn.addEventListener("click", () => {
-        els.matrixInput.value = `FIELD REPORT // Q4 MARITIME & SEMICONDUCTOR LOGISTICS\nPort congestion across Southeast Asian transshipment hubs rose 14% month-over-month due to rerouted container traffic and seasonal weather delays. Major foundry suppliers in Taiwan and South Korea report steady wafer output, though advanced packaging lead times remain extended by 6-8 weeks. Meanwhile, European industrial automation firms are accelerating dual-sourcing agreements with North American and Japanese component manufacturers to mitigate single-corridor exposure. Regulatory audits on cross-border export controls are expected to tighten in Q1, creating compliance overhead for mid-tier logistics integrators while favoring vertically integrated Tier-1 operators.`;
+        els.matrixInput.value = SAMPLE_FIELD_NOTE;
         els.matrixCharCount.textContent = formatCharacterCount(els.matrixInput.value.length);
-        showToast("Sample field report loaded.", "info");
+        showToast("گزارش میدانی نمونه بارگذاری شد.", "info");
     });
 }
