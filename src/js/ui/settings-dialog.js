@@ -46,8 +46,17 @@ const RESULT_STYLES = {
 
 let lastFocused = null;
 
-/** Model ids offered before the live catalogue has been fetched. */
-let knownModels = [...(config.api.modelSuggestions || [])];
+/**
+ * Models offered before the live catalogue has been fetched.
+ *
+ * `config.api.modelSuggestions` is a list of ids; the picker renders
+ * `{ id, label }` entries, so the seeds are normalised here — and
+ * `renderModelOptions()` accepts either shape to stay safe against a host that
+ * overrides the config with objects.
+ *
+ * @type {Array<{ id: string, label: string }>}
+ */
+let knownModels = (config.api.modelSuggestions || []).map((entry) => toModelEntry(entry)).filter(Boolean);
 
 /**
  * Default hint under the key field: where the value lives, in plain words.
@@ -91,13 +100,33 @@ function renderProviderCopy(providerId) {
 }
 
 /**
- * Fills the model field's suggestion list.
- * @param {Array<{ id: string, label?: string }>} models
+ * Normalises one catalogue entry — a bare id string or `{ id, label }`.
+ *
+ * @param {string | { id?: string, label?: string, display_name?: string } | null} entry
+ * @returns {{ id: string, label: string } | null} `null` when there is no usable id
+ */
+function toModelEntry(entry) {
+    if (typeof entry === "string") {
+        const id = entry.trim();
+        return id ? { id, label: id } : null;
+    }
+    const id = String(entry?.id || "").trim();
+    if (!id) return null;
+    return { id, label: String(entry?.label || entry?.display_name || id) };
+}
+
+/**
+ * Fills the model field's suggestion list. An entry without an id would render
+ * as the literal string "undefined" in the picker, so it is dropped.
+ *
+ * @param {Array<string | { id?: string, label?: string }>} models
  */
 function renderModelOptions(models) {
     if (!els.apiKeyModelOptions) return;
-    els.apiKeyModelOptions.innerHTML = models
-        .map((entry) => `<option value="${escapeHtml(entry.id)}">${escapeHtml(entry.label || entry.id)}</option>`)
+    els.apiKeyModelOptions.innerHTML = (models || [])
+        .map(toModelEntry)
+        .filter(Boolean)
+        .map((entry) => `<option value="${escapeHtml(entry.id)}">${escapeHtml(entry.label)}</option>`)
         .join("");
 }
 
@@ -190,8 +219,8 @@ async function runConnectionTest() {
 
         // The gateway's own catalogue is the best suggestion list there is.
         if (result.models?.length) {
-            knownModels = result.models;
-            renderModelOptions(result.models);
+            knownModels = result.models.map(toModelEntry).filter(Boolean);
+            renderModelOptions(knownModels);
         }
 
         const latency = `${formatNumber(result.latencyMs)} میلی‌ثانیه`;
