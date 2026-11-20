@@ -42,7 +42,7 @@ no session and no user accounts. That shapes what is and is not in scope.
 
 - The gateway API key belongs to the person using the browser. It is stored in that
   browser's `localStorage` (`nexus_settings_v1`) and sent in an `Authorization:
-  Bearer` **header** (`x-goog-api-key` on the Gemini transport) — never in a URL,
+Bearer` **header** (`x-goog-api-key` on the Gemini transport) — never in a URL,
   never logged by the app.
 - It is sent to **the base URL stored beside it**. By default that is
   `https://coarena.ai/api/v1`; the settings dialog lets the visitor point it at any

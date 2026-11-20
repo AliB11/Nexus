@@ -145,15 +145,15 @@ that snippet into `src/js/` and accepting a brief theme flash.
 NEXUS talks to an **OpenAI-compatible gateway**. Coarena is the default, because
 one free key fronts 24 models instead of a single vendor:
 
-| Field in the settings dialog | Default | Notes |
-| ---------------------------- | ------- | ----- |
-| درگاه مدل (gateway)           | `Coarena` | `Google AI Studio` is still selectable |
-| کلید API                      | — | typed by each visitor, `coa_…` for Coarena |
-| نشانی درگاه (URL)             | `https://coarena.ai/api/v1` | trailing slashes are normalised away |
-| مدل                           | `gemini-3-8-flash` | free on Coarena's free plan, 1M context, vision |
+| Field in the settings dialog | Default                     | Notes                                           |
+| ---------------------------- | --------------------------- | ----------------------------------------------- |
+| درگاه مدل (gateway)          | `Coarena`                   | `Google AI Studio` is still selectable          |
+| کلید API                     | —                           | typed by each visitor, `coa_…` for Coarena      |
+| نشانی درگاه (URL)            | `https://coarena.ai/api/v1` | trailing slashes are normalised away            |
+| مدل                          | `gemini-3-8-flash`          | free on Coarena's free plan, 1M context, vision |
 
 All three persist per browser in `localStorage["nexus_settings_v1"]`, and the
-**تست اتصال** button verifies them *before* anything is saved: it reads the public
+**تست اتصال** button verifies them _before_ anything is saved: it reads the public
 model list, then spends a single token on `POST {URL}/chat/completions` and reports
 latency, the model that actually answered, and a Persian explanation of any error
 code (`model_api_terms_required`, `insufficient_quota`, `api_key_expired`, …).
@@ -204,12 +204,12 @@ again. Nothing else changes — the app keeps its own retry, timeout and error
 handling. The proxy forwards method, headers (including `Authorization`) and body
 untouched, streams the response back, and adds the CORS headers a browser needs.
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `PORT` | `8787` | listen port |
-| `HOST` | `0.0.0.0` | bind address (container-friendly) |
-| `NEXUS_UPSTREAM` | `https://coarena.ai` | gateway origin to forward to |
-| `NEXUS_ALLOW_ORIGIN` | `*` | value for `Access-Control-Allow-Origin` |
+| Variable             | Default              | Purpose                                 |
+| -------------------- | -------------------- | --------------------------------------- |
+| `PORT`               | `8787`               | listen port                             |
+| `HOST`               | `0.0.0.0`            | bind address (container-friendly)       |
+| `NEXUS_UPSTREAM`     | `https://coarena.ai` | gateway origin to forward to            |
+| `NEXUS_ALLOW_ORIGIN` | `*`                  | value for `Access-Control-Allow-Origin` |
 
 `GET /healthz` reports what the proxy is forwarding to. Browsers treat
 `http://127.0.0.1` as a potentially trustworthy origin, so the proxy also works

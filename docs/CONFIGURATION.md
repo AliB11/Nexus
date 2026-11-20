@@ -94,10 +94,10 @@ forking.
 
 Two gateways ship in the registry (`services/provider.js` → `PROVIDERS`):
 
-| Gateway              | Protocol                | Default model            | Notes                                                              |
-| -------------------- | ----------------------- | ------------------------ | ------------------------------------------------------------------ |
-| **Coarena**          | OpenAI Chat Completions | `gemini-3-8-flash`       | One free key, 24 models. No live web grounding. Prompts are stored. |
-| **Google AI Studio** | Gemini `generateContent`| `gemini-3-flash-preview` | Direct Google key. The only transport with live web citations.      |
+| Gateway              | Protocol                 | Default model            | Notes                                                               |
+| -------------------- | ------------------------ | ------------------------ | ------------------------------------------------------------------- |
+| **Coarena**          | OpenAI Chat Completions  | `gemini-3-8-flash`       | One free key, 24 models. No live web grounding. Prompts are stored. |
+| **Google AI Studio** | Gemini `generateContent` | `gemini-3-flash-preview` | Direct Google key. The only transport with live web citations.      |
 
 Adding a third gateway means one entry in `PROVIDERS` plus defaults in
 `config.api` — no module changes, because every module speaks the neutral request.
@@ -112,11 +112,11 @@ the app surfaces it.
 
 Feature requirements per module:
 
-| Module feature                    | Coarena (`gemini-3-8-flash`)          | Google AI Studio       |
-| --------------------------------- | ------------------------------------- | ---------------------- |
-| Structured output (Module 02)     | `response_format: json_schema`, strict | `responseSchema`       |
-| Vision (Module 03)                | inline base64 data URL, ≤ 8 MB         | `inlineData`           |
-| Live web grounding (Modules 01/04)| **not available** — reported to the user | `tools: [{googleSearch}]` |
+| Module feature                     | Coarena (`gemini-3-8-flash`)             | Google AI Studio          |
+| ---------------------------------- | ---------------------------------------- | ------------------------- |
+| Structured output (Module 02)      | `response_format: json_schema`, strict   | `responseSchema`          |
+| Vision (Module 03)                 | inline base64 data URL, ≤ 8 MB           | `inlineData`              |
+| Live web grounding (Modules 01/04) | **not available** — reported to the user | `tools: [{googleSearch}]` |
 
 ---
 
@@ -124,12 +124,12 @@ Feature requirements per module:
 
 Only the dev tooling reads the environment; the app itself never does.
 
-| Variable             | Default                         | Effect                                            |
-| -------------------- | ------------------------------- | ------------------------------------------------- |
+| Variable             | Default                                          | Effect                                               |
+| -------------------- | ------------------------------------------------ | ---------------------------------------------------- |
 | `PORT`               | `5173` (dev) / `4173` (preview) / `8787` (proxy) | Port for `scripts/serve.mjs` and `scripts/proxy.mjs` |
-| `HOST`               | `0.0.0.0`                       | Bind address — keep `0.0.0.0` in containers       |
-| `NEXUS_UPSTREAM`     | `https://coarena.ai`            | Gateway origin the proxy forwards to              |
-| `NEXUS_ALLOW_ORIGIN` | `*`                             | `Access-Control-Allow-Origin` the proxy sends     |
+| `HOST`               | `0.0.0.0`                                        | Bind address — keep `0.0.0.0` in containers          |
+| `NEXUS_UPSTREAM`     | `https://coarena.ai`                             | Gateway origin the proxy forwards to                 |
+| `NEXUS_ALLOW_ORIGIN` | `*`                                              | `Access-Control-Allow-Origin` the proxy sends        |
 
 ---
 

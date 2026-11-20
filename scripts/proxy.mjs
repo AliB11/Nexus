@@ -111,7 +111,11 @@ export function createProxyServer(options = {}) {
                 upstream,
                 hint: "Set the app's gateway URL to this origin plus the API path, e.g. /api/v1"
             });
-            res.writeHead(200, { ...corsHeaders(req), "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) });
+            res.writeHead(200, {
+                ...corsHeaders(req),
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(body)
+            });
             res.end(body);
             return;
         }
@@ -127,26 +131,22 @@ export function createProxyServer(options = {}) {
         // Both schemes are supported so the upstream can be a local gateway too.
         const forward = target.protocol === "http:" ? httpRequest : httpsRequest;
 
-        const forwarded = forward(
-            target,
-            { method: req.method, headers },
-            (upstreamResponse) => {
-                /** @type {Record<string, unknown>} */
-                const out = {};
-                for (const [name, value] of Object.entries(upstreamResponse.headers)) {
-                    // The proxy's own CORS headers win, so the browser never sees
-                    // a duplicated or stricter policy from upstream.
-                    if (!name.toLowerCase().startsWith("access-control-") && !HOP_BY_HOP.has(name.toLowerCase())) {
-                        out[name] = value;
-                    }
+        const forwarded = forward(target, { method: req.method, headers }, (upstreamResponse) => {
+            /** @type {Record<string, unknown>} */
+            const out = {};
+            for (const [name, value] of Object.entries(upstreamResponse.headers)) {
+                // The proxy's own CORS headers win, so the browser never sees
+                // a duplicated or stricter policy from upstream.
+                if (!name.toLowerCase().startsWith("access-control-") && !HOP_BY_HOP.has(name.toLowerCase())) {
+                    out[name] = value;
                 }
-                res.writeHead(upstreamResponse.statusCode || 502, { ...out, ...corsHeaders(req) });
-                upstreamResponse.pipe(res);
-                upstreamResponse.on("end", () => {
-                    log(`→ ${req.method} ${req.url} ${upstreamResponse.statusCode} (${Date.now() - started} ms)`);
-                });
             }
-        );
+            res.writeHead(upstreamResponse.statusCode || 502, { ...out, ...corsHeaders(req) });
+            upstreamResponse.pipe(res);
+            upstreamResponse.on("end", () => {
+                log(`→ ${req.method} ${req.url} ${upstreamResponse.statusCode} (${Date.now() - started} ms)`);
+            });
+        });
 
         forwarded.on("error", (err) => {
             const body = JSON.stringify({

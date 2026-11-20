@@ -13,12 +13,12 @@ for, how data moves through it, and where new work belongs.
 NEXUS is deliberately small and deliberately static. Every decision below follows
 from these four constraints:
 
-| Constraint                    | Consequence                                                                                                                                    |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Constraint                    | Consequence                                                                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **No backend**                | The browser calls the model gateway directly. There is no session, no database and no server-side secret; the visitor supplies their own key. A bundled local proxy covers gateways that refuse cross-origin browser calls. |
-| **No bundler**                | Source ships as native ES modules. `npm run build` compiles CSS and _copies_ JS — it never rewrites it. What you read in `src/` is what runs.  |
-| **Untrusted model output**    | Everything the model returns is treated as hostile input: escaped before it reaches `innerHTML`, and every generated URL is scheme-checked.    |
-| **Zero runtime dependencies** | No framework, no icon pack, no markdown library. The only runtime third-party assets are Tailwind's compiled CSS and Google Fonts.             |
+| **No bundler**                | Source ships as native ES modules. `npm run build` compiles CSS and _copies_ JS — it never rewrites it. What you read in `src/` is what runs.                                                                               |
+| **Untrusted model output**    | Everything the model returns is treated as hostile input: escaped before it reaches `innerHTML`, and every generated URL is scheme-checked.                                                                                 |
+| **Zero runtime dependencies** | No framework, no icon pack, no markdown library. The only runtime third-party assets are Tailwind's compiled CSS and Google Fonts.                                                                                          |
 
 Build and test tooling (`tailwindcss`, `eslint`, `prettier`, `jsdom`) is dev-only.
 The deployed artifact is plain HTML, CSS and JS.
@@ -168,8 +168,8 @@ NexusResult  { text, sources[], finishReason, model, groundingApplied, raw }
   `sleep()` and `backoffDelay()`, which honours a server `Retry-After` when it
   asks for longer than the exponential delay.
 - `openai.js` — `createOpenAIClient({ getApiKey, getBaseUrl, getModel, maxRetries,
-  backoffBaseMs, timeoutMs, fetchImpl })` → `{ generate, listModels, getModel,
-  getBaseUrl, hasKey }`. Behaviour:
+backoffBaseMs, timeoutMs, fetchImpl })` → `{ generate, listModels, getModel,
+getBaseUrl, hasKey }`. Behaviour:
   - `POST {base}/chat/completions` with **`Authorization: Bearer <key>`**; the key
     never appears in a URL;
   - images go out as **inline base64 data URLs** — Coarena's Gemini models report
@@ -244,12 +244,12 @@ request. Four inputs — gateway selector, **API key**, **URL**, **model** — p
 Every module calls `runRequest()` with the neutral shape and reads `result.text`,
 `result.sources`, `result.finishReason`. None of them imports a transport.
 
-| #   | File          | Panel            | Neutral request                                          | Output                                                       |
-| --- | ------------- | ---------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| 01  | `briefing.js` | `panel-briefing` | `{ system, messages, grounding: true }`                   | Markdown report; citations where the transport supports them |
-| 02  | `matrix.js`   | `panel-matrix`   | `{ messages, jsonSchema: MATRIX_RESPONSE_SCHEMA }`        | Threat level, sentiment, confidence, entities, SWOT, actions |
-| 03  | `visual.js`   | `panel-visual`   | `{ messages, images: [{ mimeType, data }] }` (≤ 8 MB)     | Directive-driven visual brief (4 modes)                      |
-| 04  | `comms.js`    | `panel-comms`    | `{ system, messages: chatHistory, grounding }`            | Chat transcript, bounded history, citations when available   |
+| #   | File          | Panel            | Neutral request                                       | Output                                                       |
+| --- | ------------- | ---------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
+| 01  | `briefing.js` | `panel-briefing` | `{ system, messages, grounding: true }`               | Markdown report; citations where the transport supports them |
+| 02  | `matrix.js`   | `panel-matrix`   | `{ messages, jsonSchema: MATRIX_RESPONSE_SCHEMA }`    | Threat level, sentiment, confidence, entities, SWOT, actions |
+| 03  | `visual.js`   | `panel-visual`   | `{ messages, images: [{ mimeType, data }] }` (≤ 8 MB) | Directive-driven visual brief (4 modes)                      |
+| 04  | `comms.js`    | `panel-comms`    | `{ system, messages: chatHistory, grounding }`        | Chat transcript, bounded history, citations when available   |
 
 Each module exports its handlers plus one `init<Module>()` that binds its own
 listeners and registers the actions other modules may call. Nothing is bound
@@ -374,10 +374,10 @@ In-memory (`src/js/core/state.js`):
 
 Persisted (`localStorage`, names come from `config.storage`):
 
-| Key                       | Contents                        | Written by             |
-| ------------------------- | ------------------------------- | ---------------------- |
-| `nexus_theme`             | `"dark"` / `"light"`            | `core/theme.js`        |
-| `nexus_intel_dossiers_v1` | archived briefings (JSON array) | `services/dossiers.js` |
+| Key                       | Contents                               | Written by             |
+| ------------------------- | -------------------------------------- | ---------------------- |
+| `nexus_theme`             | `"dark"` / `"light"`                   | `core/theme.js`        |
+| `nexus_intel_dossiers_v1` | archived briefings (JSON array)        | `services/dossiers.js` |
 | `nexus_settings_v1`       | `{ provider, apiKey, baseUrl, model }` | `services/settings.js` |
 
 Versioned key names (`_v1`) mean a schema change can ship as a new key instead of
@@ -470,7 +470,7 @@ is deliberate:
 | UI copy, toasts, banners                             | Persian  | It is what the analyst reads.                                                         |
 | Model prompts (`prompts.js`)                         | Persian  | The model must answer in Persian; every builder says so explicitly.                   |
 | Rendered enum values                                 | Persian  | Translated at render time by `labels.js`.                                             |
-| `MATRIX_RESPONSE_SCHEMA` field names                 | English  | The gateway's structured-output contract, and stored dossiers must keep parsing.       |
+| `MATRIX_RESPONSE_SCHEMA` field names                 | English  | The gateway's structured-output contract, and stored dossiers must keep parsing.      |
 | `threatLevel` / `sentiment` / `category` enum values | English  | API contract **and** backwards compatibility with dossiers already in `localStorage`. |
 | Brand, model ids, clock, storage keys                | Latin    | `NEXUS`, `GEMINI 3 FLASH`, `23:15:04 UTC`, `nexus_settings_v1`.                       |
 
@@ -499,14 +499,14 @@ Adding new UI text: put enum-to-label maps in `core/labels.js`, numbers through
 
 ## 12. Known limitations & roadmap
 
-| Item                | Status / note                                                                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tailwind Play CDN   | Removed — the CSS is now compiled and purged (~31 KB instead of a ~300 KB runtime JIT script).                                                                |
-| Tailwind v4         | Pinned to v3.4 to keep the existing `darkMode: "class"` + palette semantics; migration is separate work.                                                      |
-| Streaming responses | Not implemented; every module awaits a full response. Coarena pads a non-streamed reply that runs past 20 s, so `stream: true` is the documented fix for long briefings. |
-| TypeScript          | Not used. JSDoc types are in place, which gives editor support without a compile step.                                                                        |
-| Offline             | No service worker; the archive is readable offline, generation is not.                                                                                        |
-| Key custody         | Client-side only. `scripts/proxy.mjs` covers CORS locally; an edge function is the documented upgrade path for a hosted key.                                   |
-| CORS                | Unknown per gateway: Coarena documents server-side clients only. The bundled proxy is the fallback, and the connection test names it in the error message.       |
+| Item                | Status / note                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tailwind Play CDN   | Removed — the CSS is now compiled and purged (~31 KB instead of a ~300 KB runtime JIT script).                                                                                                           |
+| Tailwind v4         | Pinned to v3.4 to keep the existing `darkMode: "class"` + palette semantics; migration is separate work.                                                                                                 |
+| Streaming responses | Not implemented; every module awaits a full response. Coarena pads a non-streamed reply that runs past 20 s, so `stream: true` is the documented fix for long briefings.                                 |
+| TypeScript          | Not used. JSDoc types are in place, which gives editor support without a compile step.                                                                                                                   |
+| Offline             | No service worker; the archive is readable offline, generation is not.                                                                                                                                   |
+| Key custody         | Client-side only. `scripts/proxy.mjs` covers CORS locally; an edge function is the documented upgrade path for a hosted key.                                                                             |
+| CORS                | Unknown per gateway: Coarena documents server-side clients only. The bundled proxy is the fallback, and the connection test names it in the error message.                                               |
 | Model id            | Defaults to `gemini-3-8-flash` on Coarena (free plan, 1M context, vision), overridable in the dialog, via `config.js` or `window.NEXUS_CONFIG`. The gateway's own `/models` list is the source of truth. |
-| i18n                | The UI is Persian-only (`lang="fa" dir="rtl"`), with copy inline in the markup and in `core/labels.js`. A second language would mean extracting it.          |
+| i18n                | The UI is Persian-only (`lang="fa" dir="rtl"`), with copy inline in the markup and in `core/labels.js`. A second language would mean extracting it.                                                      |

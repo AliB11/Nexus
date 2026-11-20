@@ -72,7 +72,11 @@ async function startStubUpstream(responder) {
  */
 async function startProxy(upstream, options = {}) {
     const lines = [];
-    const server = createProxyServer({ upstream, allowOrigin: options.allowOrigin ?? "*", log: (line) => lines.push(line) });
+    const server = createProxyServer({
+        upstream,
+        allowOrigin: options.allowOrigin ?? "*",
+        log: (line) => lines.push(line)
+    });
     const url = await listen(server);
     return { url, lines };
 }
@@ -195,7 +199,11 @@ test("a preflight is answered locally without touching the gateway", async () =>
 
     const response = await fetch(`${proxy.url}/api/v1/chat/completions`, {
         method: "OPTIONS",
-        headers: { Origin: "https://alib11.github.io", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization, content-type" }
+        headers: {
+            Origin: "https://alib11.github.io",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization, content-type"
+        }
     });
 
     assert.equal(response.status, 204);

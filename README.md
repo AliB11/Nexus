@@ -30,12 +30,12 @@ wire contract stay Latin; everything an analyst reads is Farsi.
 
 ## What it does
 
-| Module                  | What you get                                                                                                                                                                       | Wire feature                            |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **01 · OSINT Briefing** | Executive-ready intelligence report on any topic. Four analyst presets (semiconductors, cyber, grid storage, AI regulation). With clickable, verified citations when the gateway supports live web search. | grounding (Google transport only)       |
-| **02 · Signal Matrix**  | Turn raw text — or a finished briefing — into a strict JSON assessment: threat level, sentiment, confidence score, entities, opportunities, risks and action items.                 | enforced JSON schema                    |
-| **03 · Visual Intel**   | Upload a chart, document scan or photo (drag & drop, ≤ 8 MB) and get a directive-driven analysis: comprehensive brief, quantitative chart extraction, OCR, or anomaly inspection.  | vision (inline base64)                  |
-| **04 · Analyst Comms**  | Multi-turn conversation with a senior-analyst persona, bounded history, citations when the gateway can ground them.                                                                | multi-turn chat                         |
+| Module                  | What you get                                                                                                                                                                                               | Wire feature                      |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **01 · OSINT Briefing** | Executive-ready intelligence report on any topic. Four analyst presets (semiconductors, cyber, grid storage, AI regulation). With clickable, verified citations when the gateway supports live web search. | grounding (Google transport only) |
+| **02 · Signal Matrix**  | Turn raw text — or a finished briefing — into a strict JSON assessment: threat level, sentiment, confidence score, entities, opportunities, risks and action items.                                        | enforced JSON schema              |
+| **03 · Visual Intel**   | Upload a chart, document scan or photo (drag & drop, ≤ 8 MB) and get a directive-driven analysis: comprehensive brief, quantitative chart extraction, OCR, or anomaly inspection.                          | vision (inline base64)            |
+| **04 · Analyst Comms**  | Multi-turn conversation with a senior-analyst persona, bounded history, citations when the gateway can ground them.                                                                                        | multi-turn chat                   |
 
 > Live web grounding is a Google Search tool that exists only on the direct Gemini
 > transport. On Coarena the app says so in a toast instead of implying citations
@@ -73,18 +73,18 @@ Then:
 
 ## Scripts
 
-| Command           | What it does                                                                      |
-| ----------------- | --------------------------------------------------------------------------------- |
-| `npm run dev`     | Build, serve on `:5173` and rebuild on change                                     |
-| `npm run build`   | Compile Tailwind + copy source into `dist/`                                       |
-| `npm run preview` | Serve the production build on `:4173`                                             |
+| Command           | What it does                                                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`     | Build, serve on `:5173` and rebuild on change                                                                    |
+| `npm run build`   | Compile Tailwind + copy source into `dist/`                                                                      |
+| `npm run preview` | Serve the production build on `:4173`                                                                            |
 | `npm run proxy`   | Local pass-through proxy for the gateway, with CORS headers — the fallback if the browser is blocked (see below) |
-| `npm run lint`    | ESLint (flat config, per-layer browser/node globals)                              |
-| `npm run format`  | Prettier write                                                                    |
-| `npm run verify`  | Static integrity: DOM ids ↔ markup, import graph, exports, bus actions, key leaks |
-| `npm test`        | 150 tests via the built-in Node test runner (unit + jsdom boot smoke test)        |
-| `npm run check`   | Everything above, in CI order                                                     |
-| `npm run assets`  | Re-rasterise brand PNGs from `assets/brand/*.svg` (optional dependency)           |
+| `npm run lint`    | ESLint (flat config, per-layer browser/node globals)                                                             |
+| `npm run format`  | Prettier write                                                                                                   |
+| `npm run verify`  | Static integrity: DOM ids ↔ markup, import graph, exports, bus actions, key leaks                                |
+| `npm test`        | 150 tests via the built-in Node test runner (unit + jsdom boot smoke test)                                       |
+| `npm run check`   | Everything above, in CI order                                                                                    |
+| `npm run assets`  | Re-rasterise brand PNGs from `assets/brand/*.svg` (optional dependency)                                          |
 
 ## Project structure
 
@@ -126,11 +126,11 @@ the security model, storage schemas and a guide for adding a fifth module:
 
 ## Configuration
 
-| Mechanism                | Scope          | Example                                      |
-| ------------------------ | -------------- | -------------------------------------------- |
-| Settings dialog (in-app) | one browser    | gateway, API key, base URL, model id         |
-| `window.NEXUS_CONFIG`    | one deployment | `{ api: { baseUrl: "/api/model" } }`         |
-| `src/js/config.js`       | one fork       | defaults, limits, storage keys               |
+| Mechanism                | Scope          | Example                              |
+| ------------------------ | -------------- | ------------------------------------ |
+| Settings dialog (in-app) | one browser    | gateway, API key, base URL, model id |
+| `window.NEXUS_CONFIG`    | one deployment | `{ api: { baseUrl: "/api/model" } }` |
+| `src/js/config.js`       | one fork       | defaults, limits, storage keys       |
 
 Details in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 

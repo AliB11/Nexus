@@ -28,7 +28,7 @@ fronts 24 models instead of a single vendor.
 - **«تست اتصال» — a connection test.** It reads the public `/models` catalogue, then
   spends a single token on a chat call, and reports latency, the number of models
   the gateway listed and the model that actually answered. It probes the values
-  *typed into the form*, never persists them, corrects a near-miss model id in place
+  _typed into the form_, never persists them, corrects a near-miss model id in place
   (`gemini-3.8-flash` → `gemini-3-8-flash`), and translates 18 Coarena error codes
   into Persian advice (`model_api_terms_required`, `insufficient_quota`,
   `api_key_expired`, `model_not_found`, …).
@@ -76,7 +76,7 @@ fronts 24 models instead of a single vendor.
 ### Fixed
 
 - **`scripts/verify.mjs` mistook prose for code.** An import scan that matched
-  across newlines parsed the phrase "modules never *import* a transport" as an
+  across newlines parsed the phrase "modules never _import_ a transport" as an
   `import … from` statement and reported every JSDoc brace in between as a missing
   export. Comments are now blanked before the import/export/bus scans, and imports
   are anchored to a statement start.

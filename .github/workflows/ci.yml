@@ -49,8 +49,12 @@ jobs:
 
       - name: Assert that no API key is committed
         run: |
-          if git grep -nIE "AIza[0-9A-Za-z_-]{20,}" -- ':!tests' ':!*.md' ':!docs'; then
-            echo "::error::A string that looks like a Google API key is committed to this repository."
+          # Coarena (coa_), Google (AIza), Anthropic (sk-ant-) and OpenAI (sk-) key
+          # shapes. Tests and docs may describe a shape; source and assets may not
+          # contain one. `npm run verify` performs the same scan over src/, docs/
+          # and public/ with the same intent.
+          if git grep -nIE "coa_[0-9a-f]{16,}|AIza[0-9A-Za-z_-]{20,}|sk-ant-[0-9A-Za-z_-]{16,}|sk-(proj-)?[0-9A-Za-z_-]{20,}" -- ':!tests' ':!*.md' ':!docs'; then
+            echo "::error::A string that looks like a model-gateway API key is committed to this repository."
             echo "Rotate the key immediately, remove it from history, and read SECURITY.md."
             exit 1
           fi
