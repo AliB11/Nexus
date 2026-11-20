@@ -162,6 +162,19 @@ test("first run without a key opens the settings dialog and flags the chip", () 
     assert.match(els.apiKeyModalHint.textContent, /localStorage/);
 });
 
+test("the model picker suggests real ids, never a placeholder", () => {
+    click(els.apiKeySettingsBtn);
+
+    const values = [...els.apiKeyModelOptions.options].map((option) => option.value);
+    assert.ok(values.length > 0, "the seeded suggestions are rendered");
+    assert.ok(values.includes("gemini-3-8-flash"), `expected the default model in ${values.join(", ")}`);
+    for (const value of values) {
+        assert.ok(value.length > 0, "an empty suggestion would render as a blank row");
+        assert.ok(!value.includes("undefined"), `a suggestion rendered as ${value}`);
+    }
+    click(els.apiKeyCancelBtn);
+});
+
 test("the dialog offers both gateways and pre-fills the Coarena defaults", () => {
     const options = [...els.apiKeyProviderSelect.options].map((option) => option.value);
     assert.deepEqual(options, ["coarena", "google"]);
@@ -202,6 +215,10 @@ test("the connection test button probes the typed values, not the stored ones", 
     await waitFor(() => els.apiKeyTestResult.textContent.includes("اتصال برقرار است"), "a success verdict");
     assert.match(els.apiKeyTestResult.textContent, /gemini-3-8-flash/);
     assert.match(els.apiKeyTestResult.textContent, /میلی‌ثانیه/);
+
+    // The gateway's own catalogue replaces the seeded suggestions.
+    const values = [...els.apiKeyModelOptions.options].map((option) => option.value);
+    assert.deepEqual(values, ["gemini-3-8-flash"], "the live catalogue is now the suggestion list");
 
     assert.equal(calls[0].url, "https://coarena.ai/api/v1/models");
     assert.equal(calls[1].url, "https://coarena.ai/api/v1/chat/completions");
