@@ -61,14 +61,47 @@ One-time setup:
 
 ## 3. Vercel
 
-| Setting          | Value           |
-| ---------------- | --------------- |
-| Framework preset | Other           |
-| Build command    | `npm run build` |
-| Output directory | `dist`          |
-| Install command  | `npm ci`        |
+NEXUS is live at **<https://nexus-alib11.vercel.app/>** — project `nexus`, linked
+to the GitHub repository `AliB11/Nexus`.
+
+| Setting          | Value                         |
+| ---------------- | ----------------------------- |
+| Framework preset | _none_ (see the note below)   |
+| Build command    | `npm run build`               |
+| Output directory | `dist`                        |
+| Install command  | `npm ci`                      |
+| Root directory   | `.`                           |
+| Node             | `22.x` (pinned via `engines`) |
 
 A `vercel.json` is not required. If you add one, keep `"outputDirectory": "dist"`.
+
+### Two things worth knowing
+
+1. **"Other" is not an accepted framework value in the REST API.** The dashboard
+   offers it, but `POST /v11/projects` rejects `framework: "other"`. Create the
+   project with `framework` unset — the saved `buildCommand` and
+   `outputDirectory` are all a static build needs. The deployments REST endpoint
+   (`POST /v13/deployments`) additionally refuses a _new_ project unless
+   `projectSettings.framework` names a supported preset, so API-created first
+   deployments pass `"vite"` — its conventions (build → `dist`) match this repo
+   and the explicit `buildCommand` means Vite itself is never invoked.
+2. **Deployment Protection.** The account default is
+   `ssoProtection: all_except_custom_domains`, which puts anonymous visitors to
+   any `*.vercel.app` URL behind a Vercel login. For a public app turn it off in
+   _Project → Settings → Deployment Protection_, or attach a custom domain
+   (custom domains are exempt by that setting). The REST API in this toolchain
+   cannot change `ssoProtection`.
+
+### Deploying again
+
+`gitProviderOptions.createDeployments` is `disabled` on this project, so pushing
+does **not** auto-deploy. Create a deployment explicitly:
+
+```bash
+vercel deploy --prod --git AliB11/Nexus#main
+```
+
+or via the API with `git_source: { type: "github", repoId: 1464751830, ref: "main" }`.
 
 ---
 

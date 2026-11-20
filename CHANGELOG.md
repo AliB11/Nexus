@@ -6,10 +6,71 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+_Nothing yet — add your entry here under the relevant heading (`Added`,
+`Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`)._
+
+## [2.1.0] - 2026-11-20
+
+The workspace is now Persian and right-to-left, and it is deployed to Vercel.
+
 ### Added
 
-- Nothing yet — add your entry above this line under the relevant heading
-  (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`).
+- **Persian (RTL) interface.** `<html lang="fa" dir="rtl">`, Vazirmatn in the
+  `sans` and `mono` font stacks, and every label, placeholder, toast, banner and
+  model prompt translated. `NEXUS`, `GEMINI`, model ids, the UTC clock and the
+  `localStorage` keys stay Latin — they are brand, protocol or stored data.
+- **`src/js/core/labels.js`** — render-time translation of the wire enums
+  (`threatLevel`, `sentiment`, `category`, briefing `focus`). The enums stay
+  English because they are part of the Gemini `responseSchema` and of dossiers
+  already archived in `localStorage`.
+- **`src/js/core/schema.js`** — the Module 02 structured-output contract, moved
+  out of `modules/matrix.js` so it is DOM-free data that tests can assert
+  without jsdom.
+- **Persian digits** for user-facing counters (`۱٬۲۳۴ نویسه`, dossier count,
+  citation count); timestamps, file sizes and the telemetry clock keep their
+  Latin technical form and are marked `dir="ltr"`.
+- **Markdown rendering for ordered lists, blockquotes, horizontal rules and
+  links.** `renderMarkdown()` previously emitted those as literal text, even
+  though the Gemini briefings produce numbered action lists. Links are lifted
+  out of the inline pass and every `href` goes through `safeUrl()`.
+- **Vercel deployment** at <https://nexus-alib11.vercel.app/>, plus the settings
+  and caveats documented in `docs/DEPLOYMENT.md §3`.
+- Tests: 92 passing (was 80), including an RTL guard that fails the build if a
+  physical direction utility reappears anywhere in `src/`, a nav-tab
+  markup/class parity check, and enum-to-label sync assertions against the
+  response schema.
+
+### Changed
+
+- **Logical direction utilities everywhere.** `left-0`/`right-5`/`pl-`/`pr-`/
+  `ml-`/`mr-`/`border-r`/`rounded-tl-none`/`text-left` are replaced by
+  `start-0`/`end-5`/`ps-`/`pe-`/`ms-`/`me-`/`border-e`/`rounded-ss-none`/
+  `text-start`, so the shell mirrors instead of leaking an LTR layout into RTL.
+- **The mobile drawer slides along the inline axis.** JS toggles a single
+  `drawer-closed` class and `main.css` picks the sign from `dir`, replacing the
+  hardcoded `-translate-x-full` that was duplicated across three modules.
+- **Nav-tab styling moved into `.nav-tab` / `.nav-tab-active`.** `switchTab()`
+  used to rebuild each button's whole `className` from two duplicated Tailwind
+  strings (markup + JS) that had drifted apart; it now only toggles a class and
+  sets `aria-current`.
+- `uppercase` and wide `tracking-*` are neutralised for `[lang="fa"]` copy —
+  casing is meaningless in an Arabic-derived script and tracking tears connected
+  glyphs apart. Technical spans opt back in with `dir="ltr"`.
+- `engines.node` pinned from `>=20.0.0` to `22.x` so local, CI and Vercel build
+  on the same major (Vercel was silently using 26.x).
+
+### Fixed
+
+- Resetting the chat while a request was in flight left a detached typing
+  indicator that the pending response would re-append to the cleared transcript.
+- The toast container was not a live region; it is now `role="status"`
+  `aria-live="polite"`, so screen readers announce feedback.
+- `#dismissErrorBtn` was an icon-only button with no accessible name.
+- The briefing focus badge printed the raw English enum in upper case instead of
+  its Persian label.
+- `<link rel="canonical">` pointed at the GitHub repository rather than the
+  deployed app; `og:url`, an absolute `og:image`, `og:locale` and the Twitter
+  card tags are now set.
 
 ## [2.0.0] - 2026-11-19
 

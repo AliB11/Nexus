@@ -1,6 +1,6 @@
 <div align="center">
 
-![NEXUS — AI Intelligence Platform](./public/og-image.png)
+![NEXUS — پلتفرم اطلاعات هوش مصنوعی](./public/og-image.png)
 
 # NEXUS
 
@@ -8,11 +8,17 @@
 Web-grounded OSINT briefings, structured signal extraction, visual intelligence
 and an interactive analyst — in one static app powered by the Gemini API.
 
+**The interface is Persian (RTL).** Brand names, model ids and the Gemini API
+contract stay Latin; everything an analyst reads is Farsi.
+**رابط کاربری کاملاً فارسی و راست‌به‌چپ است.**
+
+**Live:** <https://nexus-alib11.vercel.app/>
+
 [![CI](https://github.com/AliB11/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/AliB11/Nexus/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-cyan.svg)](./LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D20-339933.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-22.x-339933.svg)](https://nodejs.org)
 [![Code style: Prettier](https://img.shields.io/badge/code_style-Prettier-ff69b4.svg)](https://prettier.io)
-[![Tests](https://img.shields.io/badge/tests-80%20passing-brightgreen.svg)](./tests)
+[![Tests](https://img.shields.io/badge/tests-92%20passing-brightgreen.svg)](./tests)
 [![No backend](https://img.shields.io/badge/architecture-static%20%2B%20client--side-blueviolet.svg)](./docs/ARCHITECTURE.md)
 
 **No backend · no bundler · no runtime dependencies · MIT licensed**
@@ -32,7 +38,7 @@ and an interactive analyst — in one static app powered by the Gemini API.
 
 Plus: dark/light themes, a local dossier archive, copy-to-clipboard on every
 report, print styles for archiving briefings, UTC telemetry clock, toasts instead
-of `alert()`, and a responsive shell with a mobile drawer.
+of `alert()`, and a responsive RTL shell with a mobile drawer.
 
 ## Quick start
 
@@ -122,7 +128,12 @@ works at a domain root or under a sub-path.
   push to `main`; just set _Settings → Pages → Source: GitHub Actions_. If Pages is
   currently on “Deploy from a branch” it would publish the repository root instead
   of `dist/` — see the warning in [docs/DEPLOYMENT.md §2](docs/DEPLOYMENT.md#2-github-pages).
-- **Vercel / Netlify / Cloudflare Pages** — build `npm run build`, output `dist`.
+- **Vercel** — this repo is deployed at <https://nexus-alib11.vercel.app/>
+  (project `nexus`, linked to `AliB11/Nexus`, build `npm run build`, output
+  `dist`, install `npm ci`). See
+  [docs/DEPLOYMENT.md §3](docs/DEPLOYMENT.md#3-vercel) for the two settings that
+  differ from the dashboard defaults.
+- **Netlify / Cloudflare Pages** — build `npm run build`, output `dist`.
 - **Any static host / nginx / S3** — same folder; serve `.js` as `text/javascript`.
 - **Your own key instead of the visitor's?** Put an edge function in front of the
   API and set `api.baseUrl` — see
