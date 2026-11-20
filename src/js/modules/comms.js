@@ -13,11 +13,10 @@
 import { config } from "../config.js";
 import { els } from "../core/dom.js";
 import { state } from "../core/state.js";
-import { api } from "../api/client.js";
 import { escapeHtml, safeUrl } from "../core/sanitize.js";
 import { renderMarkdown } from "../core/markdown.js";
 import { hideError, showError, showToast } from "../core/toast.js";
-import { blockReason, extractSources, firstText } from "../api/gemini.js";
+import { runRequest } from "../services/provider.js";
 import { ANALYST_SYSTEM_PROMPT } from "../core/prompts.js";
 import { trimChatHistory } from "../core/history.js";
 
@@ -129,40 +128,34 @@ export async function handleChatSubmit(e) {
     els.chatSendBtn.disabled = true;
 
     appendChatBubble("user", message);
-    state.chatHistory.push({ role: "user", parts: [{ text: message }] });
+    state.chatHistory.push({ role: "user", text: message });
     appendTypingIndicator();
 
-    const useGrounding = els.chatGroundingToggle.checked;
-    const payload = {
-        contents: state.chatHistory,
-        systemInstruction: {
-            parts: [
-                {
-                    text: ANALYST_SYSTEM_PROMPT
-                }
-            ]
-        }
-    };
-    if (useGrounding) {
-        payload.tools = [{ google_search: {} }];
-    }
-
     try {
-        const result = await api.generate(payload);
-        const candidate = result.candidates?.[0];
-        const replyText = firstText(result);
+        const result = await runRequest({
+            system: ANALYST_SYSTEM_PROMPT,
+            messages: state.chatHistory,
+            grounding: els.chatGroundingToggle.checked
+        });
+        const replyText = result.text;
 
         if (!replyText) {
-            const blocked = blockReason(result);
-            throw new Error(blocked ? `پاسخ تحلیل‌گر مسدود شد (دلیل پایان: ${blocked}).` : "پاسخ تحلیل‌گر خالی بود.");
+            throw new Error(
+                result.finishReason
+                    ? `پاسخ تحلیل‌گر مسدود شد (دلیل پایان: ${result.finishReason}).`
+                    : "پاسخ تحلیل‌گر خالی بود."
+            );
         }
 
-        const sources = extractSources(candidate);
-        state.chatHistory.push({ role: "model", parts: [{ text: replyText }] });
+        if (result.groundingUnavailable) {
+            showToast("جست‌وجوی زنده در این درگاه در دسترس نیست؛ پاسخ از دانش مدل آمد.", "info");
+        }
+
+        state.chatHistory.push({ role: "assistant", text: replyText });
         trimChatHistory(state.chatHistory, config.limits.chatHistoryMaxMessages);
 
         removeTypingIndicator();
-        appendChatBubble("model", replyText, sources);
+        appendChatBubble("model", replyText, result.sources);
     } catch (err) {
         removeTypingIndicator();
         state.chatHistory.pop(); // Roll back failed turn

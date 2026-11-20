@@ -1,18 +1,18 @@
 /**
  * Module 01 — OSINT Strategic Briefing.
  *
- * Sends a web-grounded `generateContent` request (Google Search tool enabled),
- * renders the Markdown report with its verified citations, and exposes the
- * result to the archive and to the Signal Matrix.
+ * Sends a grounding request through the provider layer, renders the Markdown
+ * report with any verified citations, and exposes the result to the archive and
+ * to the Signal Matrix. Live web citations only exist on the Google transport;
+ * on Coarena the report is model knowledge and the user is told so.
  */
 import { els } from "../core/dom.js";
 import { state } from "../core/state.js";
-import { api } from "../api/client.js";
 import { escapeHtml, safeUrl } from "../core/sanitize.js";
 import { renderMarkdown } from "../core/markdown.js";
 import { copyToClipboard } from "../core/clipboard.js";
 import { hideError, showError, showToast } from "../core/toast.js";
-import { blockReason, extractSources, firstText } from "../api/gemini.js";
+import { runRequest } from "../services/provider.js";
 import { registerAction, invokeAction } from "../core/bus.js";
 import { formatNumber, formatUtcTimestamp } from "../core/format.js";
 import { focusLabel } from "../core/labels.js";
@@ -69,26 +69,26 @@ export async function handleBriefingSubmit(e) {
     const userQuery = buildBriefingQuery({ topic, focus });
 
     try {
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            tools: [{ google_search: {} }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
-        };
-
-        const result = await api.generate(payload);
-        const candidate = result.candidates?.[0];
-        const text = firstText(result);
+        const result = await runRequest({
+            system: systemPrompt,
+            messages: [{ role: "user", text: userQuery }],
+            grounding: true
+        });
+        const text = result.text;
 
         if (!text) {
-            const blocked = blockReason(result);
             throw new Error(
-                blocked
-                    ? `مدل هیچ متنی برنگرداند (دلیل پایان: ${blocked}). موضوع را محدودتر کنید.`
+                result.finishReason
+                    ? `مدل هیچ متنی برنگرداند (دلیل پایان: ${result.finishReason}). موضوع را محدودتر کنید.`
                     : "مدل هیچ گزارش اطلاعاتی تولید نکرد. پرسش را دقیق‌تر کنید."
             );
         }
 
-        const sources = extractSources(candidate);
+        if (result.groundingUnavailable) {
+            showToast("این درگاه ابزار جست‌وجوی زنده ندارد؛ گزارش بر پایهٔ دانش مدل تولید شد.", "info");
+        }
+
+        const sources = result.sources;
         const timestamp = formatUtcTimestamp();
 
         const dossier = {

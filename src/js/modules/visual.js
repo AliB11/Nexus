@@ -8,11 +8,10 @@
 import { config } from "../config.js";
 import { els } from "../core/dom.js";
 import { state } from "../core/state.js";
-import { api } from "../api/client.js";
 import { renderMarkdown } from "../core/markdown.js";
 import { copyToClipboard } from "../core/clipboard.js";
 import { hideError, showError, showToast } from "../core/toast.js";
-import { blockReason, firstText } from "../api/gemini.js";
+import { runRequest } from "../services/provider.js";
 import { buildVisualPrompt } from "../core/prompts.js";
 import { formatFileSize, formatMaxImageSize } from "../core/format.js";
 export function handleImageFile(file) {
@@ -70,31 +69,18 @@ export async function handleVisualSubmit(e) {
     els.visualOutputCard.classList.add("hidden");
     els.visualLoader.classList.remove("hidden");
 
-    const payload = {
-        contents: [
-            {
-                role: "user",
-                parts: [
-                    { text: finalPrompt },
-                    {
-                        inlineData: {
-                            mimeType: state.visualImage.mimeType,
-                            data: state.visualImage.base64
-                        }
-                    }
-                ]
-            }
-        ]
-    };
-
     try {
-        const result = await api.generate(payload);
-        const text = firstText(result);
+        const result = await runRequest({
+            messages: [{ role: "user", text: finalPrompt }],
+            // Sent inline as base64: Coarena's Gemini models refuse remote image
+            // URLs (`image_url: false`) but accept data URLs (`image_base64`).
+            images: [{ mimeType: state.visualImage.mimeType, data: state.visualImage.base64 }]
+        });
+        const text = result.text;
         if (!text) {
-            const blocked = blockReason(result);
             throw new Error(
-                blocked
-                    ? `مدل این تحلیل تصویر را مسدود کرد (دلیل پایان: ${blocked}).`
+                result.finishReason
+                    ? `مدل این تحلیل تصویر را مسدود کرد (دلیل پایان: ${result.finishReason}).`
                     : "هیچ یافتهٔ اطلاعات بصری برگردانده نشد."
             );
         }

@@ -93,7 +93,9 @@ export function boot() {
 
     // Nothing works without credentials, so ask for them up front (once).
     if (!hasApiKey() && !isKeyInjected()) {
-        openSettingsDialog({ reason: "NEXUS برای تحلیل زنده به یک کلید Gemini API نیاز دارد." });
+        openSettingsDialog({
+            reason: "NEXUS برای تحلیل زنده به اعتبارنامهٔ درگاه مدل نیاز دارد — کلید رایگان Coarena کافی است."
+        });
     }
 
     document.documentElement.dataset.nexusReady = "true";

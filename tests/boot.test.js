@@ -81,7 +81,7 @@ async function waitFor(predicate, message, timeoutMs = 2000) {
     throw new Error(`Timed out waiting for: ${message} (banner: "${bannerText()}")`);
 }
 
-/** Installs a canned Gemini response. */
+/** Installs a canned OpenAI Chat Completions response (Coarena's protocol). */
 function stubFetch(response) {
     const calls = [];
     globalThis.fetch = async (url, init) => {
@@ -96,7 +96,33 @@ function stubFetch(response) {
     return calls;
 }
 
+/**
+ * Installs a queue of canned responses — one per request — and records the
+ * calls. The final response repeats if more requests arrive. jsdom implements
+ * neither `fetch` nor `Headers`, so the response is a hand-rolled stub.
+ *
+ * @param {Array<{ ok?: boolean, status?: number, body: object, headers?: object }>} responses
+ */
+function stubFetchSequence(responses) {
+    const calls = [];
+    let index = 0;
+    globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        const next = responses[Math.min(index, responses.length - 1)];
+        index += 1;
+        return {
+            ok: next.ok !== false,
+            status: next.status || 200,
+            headers: { get: (name) => next.headers?.[String(name).toLowerCase()] ?? null },
+            json: async () => next.body,
+            text: async () => JSON.stringify(next.body)
+        };
+    };
+    return calls;
+}
+
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+const change = (el) => el.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
 const submit = (el) => el.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
 
 after(() => {
@@ -136,18 +162,87 @@ test("first run without a key opens the settings dialog and flags the chip", () 
     assert.match(els.apiKeyModalHint.textContent, /localStorage/);
 });
 
-test("saving a key through the dialog persists it and updates the chip", () => {
-    els.apiKeyInput.value = "AIza-boot-test-key";
-    els.apiKeyModelInput.value = "gemini-boot-model";
+test("the dialog offers both gateways and pre-fills the Coarena defaults", () => {
+    const options = [...els.apiKeyProviderSelect.options].map((option) => option.value);
+    assert.deepEqual(options, ["coarena", "google"]);
+    assert.equal(els.apiKeyProviderSelect.value, "coarena");
+    assert.equal(els.apiKeyBaseUrlInput.value, "https://coarena.ai/api/v1");
+    assert.equal(els.apiKeyModelInput.value, "gemini-3-8-flash");
+    assert.match(els.apiKeyProviderNote.textContent, /پلن رایگان/);
+});
+
+test("saving key, URL and model through the dialog persists all three", () => {
+    els.apiKeyInput.value = "coa_boot-test-key";
+    els.apiKeyBaseUrlInput.value = "https://coarena.ai/api/v1/";
+    els.apiKeyModelInput.value = "gemini-3-8-flash";
     click(els.apiKeySaveBtn);
 
     assert.ok(els.apiKeyModal.classList.contains("hidden"), "dialog should close after save");
     assert.equal(els.apiKeyStatusChip.textContent, "تنظیم‌شده");
-    assert.equal(els.engineModelLabel.textContent, "GEMINI BOOT MODEL");
+    assert.equal(els.engineModelLabel.textContent, "Coarena · GEMINI 3.8 FLASH");
 
     const stored = JSON.parse(localStorage.getItem("nexus_settings_v1"));
-    assert.equal(stored.apiKey, "AIza-boot-test-key");
-    assert.equal(stored.model, "gemini-boot-model");
+    assert.equal(stored.apiKey, "coa_boot-test-key");
+    assert.equal(stored.model, "gemini-3-8-flash");
+    // A trailing slash is normalised away so `${base}/chat/completions` is clean.
+    assert.equal(stored.baseUrl, "https://coarena.ai/api/v1");
+    assert.equal(stored.provider, "coarena");
+});
+
+test("the connection test button probes the typed values, not the stored ones", async () => {
+    const calls = stubFetchSequence([
+        { ok: true, status: 200, body: { data: [{ id: "gemini-3-8-flash", display_name: "Gemini 3.8 Flash" }] } },
+        { ok: true, status: 200, body: { model: "gemini-3-8-flash", choices: [{ message: { content: "pong" } }] } }
+    ]);
+
+    click(els.apiKeySettingsBtn);
+    els.apiKeyInput.value = "coa_unsaved-key";
+    click(els.apiKeyTestBtn);
+
+    await waitFor(() => els.apiKeyTestResult.textContent.includes("اتصال برقرار است"), "a success verdict");
+    assert.match(els.apiKeyTestResult.textContent, /gemini-3-8-flash/);
+    assert.match(els.apiKeyTestResult.textContent, /میلی‌ثانیه/);
+
+    assert.equal(calls[0].url, "https://coarena.ai/api/v1/models");
+    assert.equal(calls[1].url, "https://coarena.ai/api/v1/chat/completions");
+    assert.equal(calls[1].init.headers.Authorization, "Bearer coa_unsaved-key", "the typed key is used");
+    assert.equal(JSON.parse(calls[1].init.body).max_tokens, 1, "the probe spends one token");
+    assert.ok(
+        !JSON.parse(localStorage.getItem("nexus_settings_v1")).apiKey.includes("unsaved"),
+        "testing must not save"
+    );
+
+    click(els.apiKeyCancelBtn);
+});
+
+test("a mistyped model id is reported with the correct one", async () => {
+    stubFetchSequence([
+        { ok: true, status: 200, body: { data: [{ id: "gemini-3-8-flash", display_name: "Gemini 3.8 Flash" }] } },
+        { ok: true, status: 200, body: { model: "gemini-3-8-flash", choices: [{ message: { content: "pong" } }] } }
+    ]);
+
+    click(els.apiKeySettingsBtn);
+    els.apiKeyModelInput.value = "gemini-3.8-flash";
+    click(els.apiKeyTestBtn);
+
+    // Wait for the busy notice to be replaced by an actual verdict.
+    await waitFor(() => !els.apiKeyTestResult.textContent.includes("در حال تماس"), "a verdict");
+    assert.match(els.apiKeyTestResult.textContent, /شکل درست آن «gemini-3-8-flash»/);
+    assert.match(els.apiKeyTestResult.textContent, /اتصال ناموفق بود/);
+    assert.equal(els.apiKeyModelInput.value, "gemini-3-8-flash", "the field is corrected in place");
+    click(els.apiKeyCancelBtn);
+});
+
+test("an unreachable gateway explains CORS instead of failing silently", async () => {
+    globalThis.fetch = async () => {
+        throw new TypeError("Failed to fetch");
+    };
+
+    click(els.apiKeySettingsBtn);
+    click(els.apiKeyTestBtn);
+    await waitFor(() => els.apiKeyTestResult.textContent.includes("اتصال ناموفق بود"), "a failure verdict");
+    assert.match(els.apiKeyTestResult.textContent, /CORS/);
+    click(els.apiKeyCancelBtn);
 });
 
 // ---------------------------------------------------------------- navigation
@@ -261,7 +356,7 @@ test("Module 02 sample loader fills the textarea and the character counter", asy
 });
 
 test("Module 04 clears its transcript and history", () => {
-    state.chatHistory.push({ role: "user", parts: [{ text: "stale" }] });
+    state.chatHistory.push({ role: "user", text: "stale" });
     click(els.clearChatBtn);
     assert.deepEqual(state.chatHistory, []);
     assert.match(els.chatMessages.textContent, /بازنشانی شد/);
@@ -288,59 +383,54 @@ test("the apikey:prompt bus action opens and closes the dialog", () => {
 });
 
 // ------------------------------------------------- end-to-end through the API
-test("Module 04 renders a grounded answer with citations from a stubbed API", async () => {
+test("Module 04 answers through Coarena and says when grounding is unavailable", async () => {
     const calls = stubFetch({
-        candidates: [
+        model: "gemini-3-8-flash",
+        choices: [
             {
-                finishReason: "STOP",
-                content: {
-                    parts: [{ text: "Confirmed: **three** new interconnectors.\n\nEstimate: capacity rises." }]
-                },
-                groundingMetadata: {
-                    groundingAttributions: [{ web: { uri: "https://example.com/grid", title: "Grid Report 2026" } }]
-                }
+                finish_reason: "stop",
+                message: { content: "Confirmed: **three** new interconnectors.\n\nEstimate: capacity rises." }
             }
         ]
     });
 
+    assert.ok(els.chatGroundingToggle.checked, "live search is on by default in the UI");
     els.chatInput.value = "What changed in Nordic grid capacity?";
     submit(els.chatForm);
 
-    await waitFor(
-        () => els.chatMessages.querySelectorAll("a[target='_blank']").length > 0,
-        "a model bubble with a citation link"
-    );
+    await waitFor(() => els.chatMessages.querySelectorAll("strong").length > 0, "a rendered model bubble");
 
     const transcript = els.chatMessages.innerHTML;
     assert.match(transcript, /<strong[^>]*>three<\/strong>/, "markdown should be rendered");
-    assert.match(transcript, /Grid Report 2026/, "the citation title should appear");
-    assert.ok(transcript.includes('href="https://example.com/grid"'), "the citation should link to its source");
-    assert.equal(state.chatHistory.length, 2, "user + model turns are recorded");
+    assert.equal(state.chatHistory.length, 2, "user + assistant turns are recorded");
+    assert.deepEqual(state.chatHistory[0], { role: "user", text: "What changed in Nordic grid capacity?" });
+    assert.equal(state.chatHistory[1].role, "assistant", "history is provider-neutral");
+
+    // The gateway has no web-search tool, so the analyst is told rather than
+    // left believing the answer came from live sources.
+    await waitFor(() => els.toastContainer.textContent.includes("جست‌وجوی زنده"), "the grounding toast");
 
     const [call] = calls;
-    assert.equal(call.url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-boot-model:generateContent");
-    assert.equal(call.init.headers["x-goog-api-key"], "AIza-boot-test-key");
+    assert.equal(call.url, "https://coarena.ai/api/v1/chat/completions");
+    assert.equal(call.init.headers.Authorization, "Bearer coa_boot-test-key");
     assert.ok(!call.url.includes("key="), "the key must never appear in the URL");
 
     const body = JSON.parse(call.init.body);
-    assert.equal(body.contents.length, 1, "only the new user turn is sent after a session reset");
-    assert.ok(Array.isArray(body.tools), "grounding is on by default");
+    assert.equal(body.model, "gemini-3-8-flash");
+    assert.equal(body.messages[0].role, "system", "the analyst prompt travels as a system message");
+    assert.equal(body.messages[1].role, "user");
+    assert.ok(!("tools" in body), "no web-search tool exists on this protocol");
 });
 
 test("Module 01 renders a briefing and archives it as a dossier", async () => {
     stubFetch({
-        candidates: [
+        model: "gemini-3-8-flash",
+        choices: [
             {
-                finishReason: "STOP",
-                content: {
-                    parts: [
-                        {
-                            text: "## Executive Summary\n\n- **Supply** tightened.\n- Prices rose 14%.\n\n## Recommended Next Actions\n\n1. Dual-source."
-                        }
-                    ]
-                },
-                groundingMetadata: {
-                    groundingAttributions: [{ web: { uri: "https://example.com/chips", title: "Chip Watch" } }]
+                finish_reason: "stop",
+                message: {
+                    content:
+                        "## Executive Summary\n\n- **Supply** tightened.\n- Prices rose 14%.\n\n## Recommended Next Actions\n\n1. Dual-source."
                 }
             }
         ]
@@ -357,9 +447,9 @@ test("Module 01 renders a briefing and archives it as a dossier", async () => {
     assert.match(els.briefingContent.innerHTML, /<h3[^>]*>Executive Summary<\/h3>/);
     assert.match(els.briefingContent.innerHTML, /list-decimal/, "numbered actions become a list");
     assert.match(els.briefingTimestamp.textContent, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
-    assert.ok(!els.briefingSourcesCard.classList.contains("hidden"));
-    assert.equal(els.sourcesCountBadge.textContent, "۱ منبع تأییدشده");
-    assert.ok(els.briefingSourcesGrid.innerHTML.includes("Chip Watch"));
+    // Coarena has no grounding tool, so there are no citations to render and the
+    // card stays hidden instead of showing an empty grid.
+    assert.ok(els.briefingSourcesCard.classList.contains("hidden"));
 
     // Archive it
     click(els.saveDossierBtn);
@@ -386,8 +476,9 @@ test("a failed request surfaces in the banner and rolls the chat turn back", asy
     globalThis.fetch = async () => ({
         ok: false,
         status: 400,
+        headers: { get: () => null },
         json: async () => ({}),
-        text: async () => '{"error":{"message":"API key not valid"}}'
+        text: async () => '{"error":{"message":"API key not valid","code":"invalid_api_key"}}'
     });
 
     const before = state.chatHistory.length;
@@ -395,9 +486,70 @@ test("a failed request surfaces in the banner and rolls the chat turn back", asy
     submit(els.chatForm);
 
     await waitFor(() => bannerText().length > 0, "the error banner to appear");
-    assert.match(bannerText(), /وضعیت 400/);
+    assert.match(bannerText(), /API key not valid/, "the gateway's own message is kept");
+    assert.match(bannerText(), /کلید نامعتبر است/, "and translated into actionable advice");
     assert.equal(state.chatHistory.length, before, "the failed turn must be rolled back");
 
     click(els.dismissErrorBtn);
     assert.equal(bannerText(), "");
+});
+
+// ------------------------------------------------- alternative gateway (Google)
+test("switching the gateway to Google AI Studio routes to the Gemini endpoint", async () => {
+    click(els.apiKeySettingsBtn);
+    els.apiKeyProviderSelect.value = "google";
+    change(els.apiKeyProviderSelect);
+    assert.equal(
+        els.apiKeyBaseUrlInput.value,
+        "https://generativelanguage.googleapis.com/v1beta",
+        "the URL follows the chosen gateway"
+    );
+    assert.equal(els.apiKeyInput.placeholder, "AIza…");
+
+    els.apiKeyInput.value = "AIza-google-key";
+    els.apiKeyModelInput.value = "gemini-3-flash-preview";
+    click(els.apiKeySaveBtn);
+    assert.equal(els.engineModelLabel.textContent, "Google AI Studio · GEMINI 3 FLASH");
+
+    const calls = stubFetch({
+        modelVersion: "gemini-3-flash-preview",
+        candidates: [
+            {
+                finishReason: "STOP",
+                content: { parts: [{ text: "Grid capacity rose." }] },
+                groundingMetadata: {
+                    groundingAttributions: [{ web: { uri: "https://example.com/grid", title: "Grid Report 2026" } }]
+                }
+            }
+        ]
+    });
+
+    els.chatInput.value = "Cite a source for that.";
+    submit(els.chatForm);
+
+    await waitFor(
+        () => els.chatMessages.querySelectorAll("a[target='_blank']").length > 0,
+        "a model bubble with a citation link"
+    );
+    assert.match(els.chatMessages.innerHTML, /Grid Report 2026/, "grounding citations render on this transport");
+
+    const [call] = calls;
+    assert.equal(
+        call.url,
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+    );
+    assert.equal(call.init.headers["x-goog-api-key"], "AIza-google-key");
+
+    const body = JSON.parse(call.init.body);
+    assert.ok(Array.isArray(body.tools), "Google Search grounding is requested here");
+    assert.ok(body.systemInstruction.parts[0].text.length > 0, "the system prompt travels as systemInstruction");
+    assert.equal(body.contents[0].role, "user");
+
+    // Leave the app on its default gateway for whatever runs next.
+    click(els.apiKeySettingsBtn);
+    els.apiKeyProviderSelect.value = "coarena";
+    change(els.apiKeyProviderSelect);
+    els.apiKeyInput.value = "coa_boot-test-key";
+    click(els.apiKeySaveBtn);
+    assert.equal(els.engineModelLabel.textContent, "Coarena · GEMINI 3.8 FLASH");
 });

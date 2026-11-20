@@ -31,15 +31,18 @@ export function formatNumber(value) {
 
 /**
  * Turns a model id into a compact display label:
- * `gemini-3-flash-preview` → `GEMINI 3 FLASH`.
+ * `gemini-3-flash-preview` → `GEMINI 3 FLASH`, `gemini-3-8-flash` → `GEMINI 3.8 FLASH`.
  *
- * Model ids are Latin by definition, so this stays upper-cased ASCII.
+ * A digit, a separator and another digit is a dotted version rather than two
+ * tokens, so it is rejoined with a dot first. Model ids are Latin by definition
+ * — this stays upper-cased ASCII.
  *
  * @param {string} model
  * @returns {string}
  */
 export function formatModelLabel(model) {
     return String(model || "")
+        .replace(/(\d)[-_.](?=\d)/g, "$1.")
         .replace(/[-_]+/g, " ")
         .replace(/\b(preview|latest|exp|rc\d*)\b/gi, "")
         .replace(/\s+/g, " ")
@@ -106,7 +109,7 @@ export function formatCharacterCount(count) {
  * Size limit sentence for the Visual Intel uploader.
  *
  * @param {number} maxBytes
- * @returns {string} e.g. `حجم تصویر باید کمتر از ۱۰ مگابایت باشد.`
+ * @returns {string} e.g. `حجم تصویر باید کمتر از ۸ مگابایت باشد.`
  */
 export function formatMaxImageSize(maxBytes) {
     const mb = Math.round(Number(maxBytes) / (1024 * 1024));

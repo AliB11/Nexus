@@ -52,12 +52,16 @@ test("deepMerge does not mutate the source override object", () => {
 
 // ---------------------------------------------------------------------- config
 test("the effective config exposes every section the modules rely on", () => {
-    assert.ok(config.api.baseUrl.startsWith("https://generativelanguage.googleapis.com/"));
-    assert.equal(typeof config.api.textModel, "string");
-    assert.ok(config.api.textModel.length > 0);
+    // Coarena is the default gateway; Google stays available as an alternative.
+    assert.equal(config.api.provider, "coarena");
+    assert.equal(config.api.baseUrl, "https://coarena.ai/api/v1");
+    assert.equal(config.api.textModel, "gemini-3-8-flash");
+    assert.ok(config.api.modelSuggestions.includes(config.api.textModel));
+    assert.ok(config.api.google.baseUrl.startsWith("https://generativelanguage.googleapis.com/"));
+    assert.ok(config.api.google.textModel.length > 0);
     assert.equal(config.storage.dossiers, "nexus_intel_dossiers_v1");
     assert.equal(config.storage.theme, "nexus_theme");
-    assert.equal(config.limits.imageMaxBytes, 10 * 1024 * 1024);
+    assert.equal(config.limits.imageMaxBytes, 8 * 1024 * 1024);
     assert.deepEqual(config.limits.imageMimeTypes, ["image/png", "image/jpeg", "image/webp"]);
     assert.ok(config.limits.chatHistoryMaxMessages > 0);
 });

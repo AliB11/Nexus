@@ -12,10 +12,9 @@
  * `buildMatrixPrompt()`.
  */
 import { els } from "../core/dom.js";
-import { api } from "../api/client.js";
 import { escapeHtml } from "../core/sanitize.js";
 import { hideError, showError, showToast } from "../core/toast.js";
-import { blockReason, firstText } from "../api/gemini.js";
+import { runRequest } from "../services/provider.js";
 import { registerAction } from "../core/bus.js";
 import { switchTab } from "../core/navigation.js";
 import { buildMatrixPrompt } from "../core/prompts.js";
@@ -107,30 +106,18 @@ export async function handleMatrixSubmit(e) {
     els.matrixOutput.classList.add("hidden");
     els.matrixLoader.classList.remove("hidden");
 
-    const payload = {
-        contents: [
-            {
-                parts: [
-                    {
-                        text: buildMatrixPrompt({ sourceText })
-                    }
-                ]
-            }
-        ],
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: MATRIX_RESPONSE_SCHEMA
-        }
-    };
-
     try {
-        const result = await api.generate(payload);
-        const jsonText = firstText(result);
+        // The gateway enforces the schema (Coarena reports `json_schema_enforced`),
+        // so the model cannot drift into prose here.
+        const result = await runRequest({
+            messages: [{ role: "user", text: buildMatrixPrompt({ sourceText }) }],
+            jsonSchema: MATRIX_RESPONSE_SCHEMA
+        });
+        const jsonText = result.text;
         if (!jsonText) {
-            const blocked = blockReason(result);
             throw new Error(
-                blocked
-                    ? `مدل این استخراج را مسدود کرد (دلیل پایان: ${blocked}).`
+                result.finishReason
+                    ? `مدل این استخراج را مسدود کرد (دلیل پایان: ${result.finishReason}).`
                     : "استخراج ساختاریافته دادهٔ خالی برگرداند."
             );
         }
