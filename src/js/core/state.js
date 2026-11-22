@@ -10,5 +10,5 @@ export const state = {
     dossiers: [],
     visualImage: null, // { base64, mimeType, fileName }
     visualReportText: "",
-    chatHistory: [] // Gemini API contents format: [{ role, parts }]
+    chatHistory: [] // neutral request turns: [{ role: "user" | "assistant", text }]
 };

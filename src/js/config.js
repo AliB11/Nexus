@@ -50,7 +50,10 @@ export const DEFAULT_CONFIG = Object.freeze({
         /** Chat turns kept in the request payload before the oldest are dropped. */
         chatHistoryMaxMessages: 30,
         /** Citations rendered under a single chat answer. */
-        citationDisplayMax: 5
+        citationDisplayMax: 5,
+        /** Oldest dossiers are dropped beyond this count — localStorage quota is
+         *  small (≈5 MB) and a briefing with sources can be tens of KB. */
+        dossierMax: 100
     },
     ui: {
         toastDurationMs: 3200,

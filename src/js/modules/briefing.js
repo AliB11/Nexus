@@ -17,7 +17,7 @@ import { registerAction, invokeAction } from "../core/bus.js";
 import { formatNumber, formatUtcTimestamp } from "../core/format.js";
 import { focusLabel } from "../core/labels.js";
 import { BRIEFING_SYSTEM_PROMPT, buildBriefingQuery } from "../core/prompts.js";
-import { persistDossiers } from "../services/dossiers.js";
+import { persistDossiers, renderDossierList } from "../services/dossiers.js";
 
 export function renderBriefing(dossier) {
     els.briefingEmpty.classList.add("hidden");
@@ -124,7 +124,9 @@ export function initBriefing() {
     els.presetBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
             els.briefingTopic.value = btn.dataset.preset;
-            els.briefingForm.dispatchEvent(new Event("submit"));
+            // Cancelable, so the handler's `preventDefault()` behaves exactly
+            // as it does for a real submit.
+            els.briefingForm.dispatchEvent(new Event("submit", { cancelable: true }));
         });
     });
 
@@ -142,8 +144,14 @@ export function initBriefing() {
             return;
         }
         state.dossiers.unshift(state.currentBriefing);
-        persistDossiers();
-        showToast("پرونده به‌صورت محلی بایگانی شد.", "success");
+        // A quota-exceeded write must not be celebrated as a save.
+        if (persistDossiers()) {
+            showToast("پرونده به‌صورت محلی بایگانی شد.", "success");
+        } else {
+            state.dossiers = state.dossiers.filter((d) => d.id !== state.currentBriefing.id);
+            renderDossierList();
+            showToast("ذخیرهٔ پرونده ممکن نشد — حافظهٔ مرورگر پر است یا در حالت خصوصی است.", "error");
+        }
     });
 
     els.sendToMatrixBtn.addEventListener("click", () => {

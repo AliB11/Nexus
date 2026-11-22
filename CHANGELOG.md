@@ -6,8 +6,50 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-_Nothing yet — add your entry here under the relevant heading (`Added`,
-`Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`)._
+### Fixed
+
+- **Chat payloads can no longer open with the assistant's turn.** A history
+  trimmed mid-pair used to start on the model's reply, which the Gemini
+  transport answers with a 400 — every later Analyst-Comms turn would fail on
+  `provider: google` once the conversation outgrew the 30-turn window.
+  `trimChatHistory()` now guarantees a user-first payload, and
+  `toGeminiRequest()` drops leading model turns as a second line of defence.
+- **The Signal Matrix schema is translated to JSON Schema on the OpenAI wire.**
+  The Gemini-dialect schema (`OBJECT`/`STRING`, `propertyOrdering`) was sent
+  verbatim under `response_format: json_schema`, which strict OpenAI-compatible
+  endpoints (OpenAI, OpenRouter, vLLM…) reject. `toOpenAISchema()` now lowers
+  the types, strips the Gemini-only hint and closes objects with
+  `additionalProperties: false` plus a full `required` list.
+- **Untitled web citations survive.** `extractSources()` dropped every
+  grounding attribution whose `title` was empty; it now labels the source with
+  its hostname instead of losing it.
+- **Images follow the last user turn on both transports.** The Gemini mapper
+  attached inline data only when the final turn was the user's, silently
+  dropping images otherwise.
+- **A failed dossier save is no longer celebrated.** `persistDossiers()`
+  returns whether the write landed, the save button rolls back on failure
+  (quota full / private mode), and the archive is capped at
+  `limits.dossierMax` (100) so it cannot exhaust the localStorage quota.
+- **Corrupt archived data cannot break the sidebar** — `loadDossiers()` accepts
+  only a well-formed array of dossier-shaped records.
+- **A reported confidence of 0 stays 0** — `Number(...) || 75` promoted a
+  legitimate zero to the 75 % fallback; only missing/NaN scores fall back now.
+- **A non-object matrix payload fails loudly** instead of rendering a card of
+  «نامشخص» placeholders.
+- **Switching gateway A→B→A in one dialog session** now restores A's URL and
+  model (the handler compared against the persisted provider, not the one the
+  form was showing).
+- **Enter in the model field no longer saves the dialog** mid-datalist
+  selection, matching the documented intent.
+- **`scripts/serve.mjs` blocks sibling-directory traversal** (`dist2` next to
+  `dist` passed the old bare `startsWith` prefix check).
+- The settings dialog's test button ships an inline SVG — the previous
+  `<i data-lucide>` icon never rendered (lucide is not bundled).
+
+### Changed
+
+- Preset buttons dispatch a cancelable `submit` event; stale v1 comments in
+  `state.js` / `dom.js` were cleaned up. Tests: 150 → 157.
 
 ## [2.2.0] - 2026-11-20
 

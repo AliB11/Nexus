@@ -13,10 +13,12 @@ import {
     fromOpenAIResult,
     networkErrorMessage,
     normalizeBaseUrl,
-    toOpenAIPayload
+    toOpenAIPayload,
+    toOpenAISchema
 } from "../src/js/api/openai.js";
 import { NexusApiError, backoffDelay, parseOpenAIError } from "../src/js/api/errors.js";
 import { registerAction } from "../src/js/core/bus.js";
+import { MATRIX_RESPONSE_SCHEMA } from "../src/js/core/schema.js";
 
 /** Records every request and replays canned responses. */
 function stubFetch(responder) {
@@ -80,14 +82,56 @@ test("images are attached to the last user turn as base64 data URLs", () => {
 test("structured output asks for an enforced JSON schema", () => {
     const schema = { type: "object", properties: { headline: { type: "string" } } };
 
+    // Strict mode closes objects (`additionalProperties: false`) and marks every
+    // property required — what OpenAI's `json_schema` contract demands.
     assert.deepEqual(
         toOpenAIPayload({ messages: [], jsonSchema: schema }, { jsonSchemaStrict: true }).response_format,
         {
             type: "json_schema",
-            json_schema: { name: "nexus_signal_matrix", strict: true, schema }
+            json_schema: {
+                name: "nexus_signal_matrix",
+                strict: true,
+                schema: {
+                    type: "object",
+                    properties: { headline: { type: "string" } },
+                    additionalProperties: false,
+                    required: ["headline"]
+                }
+            }
         }
     );
     assert.deepEqual(toOpenAIPayload({ messages: [], jsonSchema: schema }).response_format, { type: "json_object" });
+});
+
+test("a Gemini-dialect schema is translated to JSON Schema for strict endpoints", () => {
+    const payload = toOpenAIPayload({ messages: [], jsonSchema: MATRIX_RESPONSE_SCHEMA }, { jsonSchemaStrict: true });
+    const wire = payload.response_format.json_schema.schema;
+
+    assert.equal(wire.type, "object", "upper-case OBJECT becomes lower-case object");
+    assert.equal(wire.properties.headline.type, "string");
+    assert.equal(wire.properties.confidenceScore.type, "number");
+    assert.ok(!("propertyOrdering" in wire), "the Gemini-only hint must not reach the wire");
+    assert.ok(!("propertyOrdering" in wire.properties.entities.items), "nested objects are translated too");
+    assert.equal(wire.additionalProperties, false, "strict mode closes the root object");
+    assert.ok(Array.isArray(wire.required) && wire.required.length > 0, "every property is required");
+    assert.equal(wire.properties.entities.items.additionalProperties, false, "nested objects are closed too");
+
+    // The neutral contract is untouched: the Gemini transport still receives
+    // its own dialect verbatim.
+    assert.ok("propertyOrdering" in MATRIX_RESPONSE_SCHEMA);
+});
+
+test("toOpenAISchema keeps already-lower-case JSON Schema intact apart from strict closure", () => {
+    const passthrough = { type: "object", properties: { a: { type: "string" } }, required: ["a"] };
+    assert.deepEqual(toOpenAISchema(passthrough), passthrough);
+
+    const closed = toOpenAISchema(passthrough, { strict: true });
+    assert.deepEqual(closed, {
+        type: "object",
+        properties: { a: { type: "string" } },
+        required: ["a"],
+        additionalProperties: false
+    });
 });
 
 test("fromOpenAIResult normalises content, model and finish reason", () => {
