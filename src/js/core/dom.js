@@ -130,6 +130,3 @@ export function assertElements(refs, required) {
         throw new Error(`راه‌اندازی NEXUS ناموفق بود. گره(های) DOM موجود نیست: ${missing.join(", ")}`);
     }
 }
-
-// -----------------------------------------------------------------
-// UTILITY FUNCTIONS (Clock, Toasts, Clipboard, Safe Markdown)

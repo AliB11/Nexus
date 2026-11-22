@@ -255,6 +255,73 @@ function safeOrigin(url) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Gemini-style type names this app uses in `core/schema.js`, mapped onto their
+ * JSON Schema equivalents.
+ * @type {Record<string, string>}
+ */
+const SCHEMA_TYPE_MAP = {
+    OBJECT: "object",
+    STRING: "string",
+    NUMBER: "number",
+    INTEGER: "integer",
+    BOOLEAN: "boolean",
+    ARRAY: "array"
+};
+
+/**
+ * Normalises the shared schema onto the wire shape Chat Completions expects.
+ *
+ * `core/schema.js` is written in Gemini's dialect (upper-case types,
+ * `propertyOrdering`) because that is where structured output lives most
+ * visibly. OpenAI's `response_format: { type: "json_schema" }` however speaks
+ * plain JSON Schema — lower-case types — and its `strict` mode additionally
+ * requires every object to declare `additionalProperties: false` and list all
+ * of its properties under `required`. Sending the Gemini dialect verbatim gets
+ * the request rejected by strict endpoints (OpenAI, OpenRouter, vLLM…), so the
+ * mapper translates it once, here.
+ *
+ * @param {object} schema The neutral (Gemini-dialect) schema.
+ * @param {{ strict?: boolean }} [options]
+ * @returns {object} a JSON Schema the OpenAI protocol can enforce
+ */
+export function toOpenAISchema(schema, options = {}) {
+    const strict = Boolean(options.strict);
+    return convertSchemaNode(schema, strict);
+}
+
+/**
+ * Recursive worker for `toOpenAISchema`.
+ * @param {unknown} node
+ * @param {boolean} strict
+ * @returns {unknown}
+ */
+function convertSchemaNode(node, strict) {
+    if (Array.isArray(node)) return node.map((entry) => convertSchemaNode(entry, strict));
+    if (!node || typeof node !== "object") return node;
+
+    /** @type {Record<string, unknown>} */
+    const out = {};
+    for (const [key, value] of Object.entries(node)) {
+        // `propertyOrdering` is a Gemini-only hint; JSON Schema has no such key.
+        if (key === "propertyOrdering") continue;
+        if (key === "type") {
+            const t = typeof value === "string" ? SCHEMA_TYPE_MAP[value.toUpperCase()] || value.toLowerCase() : value;
+            out.type = t;
+            continue;
+        }
+        out[key] = convertSchemaNode(value, strict);
+    }
+
+    // Strict mode is all-or-nothing: objects must close every property.
+    if (strict && out.type === "object" && out.properties && typeof out.properties === "object") {
+        out.additionalProperties = false;
+        const names = Object.keys(out.properties);
+        if (names.length > 0) out.required = names;
+    }
+    return out;
+}
+
+/**
  * Maps a provider-neutral NEXUS request onto a Chat Completions body.
  *
  * @param {import("../services/provider.js").NexusRequest} request
@@ -295,11 +362,17 @@ export function toOpenAIPayload(request, options = {}) {
     if (request.jsonSchema) {
         // Coarena reports `json_schema_enforced: true` for its Gemini models, so
         // the strict form genuinely constrains the output; `json_object` is the
-        // safe fallback for gateways that do not implement it.
+        // safe fallback for gateways that do not implement it. The schema itself
+        // is translated from the Gemini dialect to JSON Schema first — see
+        // `toOpenAISchema()`.
         payload.response_format = options.jsonSchemaStrict
             ? {
                   type: "json_schema",
-                  json_schema: { name: "nexus_signal_matrix", strict: true, schema: request.jsonSchema }
+                  json_schema: {
+                      name: "nexus_signal_matrix",
+                      strict: true,
+                      schema: toOpenAISchema(request.jsonSchema, { strict: true })
+                  }
               }
             : { type: "json_object" };
     }

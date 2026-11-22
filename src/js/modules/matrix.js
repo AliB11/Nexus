@@ -30,6 +30,12 @@ export const SAMPLE_FIELD_NOTE = `گزارش میدانی // سه‌ماههٔ �
 تراکم بنادر در hubهای ترانشیپ جنوب‌شرقی آسیا به‌دلیل تغییر مسیر ترافیک کانتینری و تأخیرهای فصلی آب‌وهوا، ۱۴ درصد نسبت به ماه قبل افزایش یافت. تأمین‌کنندگان اصلی ریخته‌گری در تایوان و کرهٔ جنوبی از خروجی پایدار ویفر گزارش می‌دهند، اما زمان تحویل بسته‌بندی پیشرفته همچنان ۶ تا ۸ هفته تمدید شده است. هم‌زمان، شرکت‌های اتوماسیون صنعتی اروپا در حال تسریع توافق‌های تأمین دوگانه با تولیدکنندگان قطعه در آمریکای شمالی و ژاپن هستند تا وابستگی به یک دالان واحد را کاهش دهند. انتظار می‌رود ممیزی‌های مقرراتی کنترل صادرات فرامرزی در سه‌ماههٔ اول سخت‌گیرانه‌تر شود و بار انطباق را برای یکپارچه‌سازان لجستیک میان‌رده افزایش دهد، در حالی که به نفع بازیگران یکپارچهٔ سطح یک تمام می‌شود.`;
 
 export function renderMatrixResult(data) {
+    // A schema-less gateway (the `json_object` fallback) can legally answer
+    // with an array or a bare value; rendering those would produce a card of
+    // «نامشخص» placeholders instead of an honest error.
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+        throw new Error("ساختار خروجی مدل با قرارداد ماتریس سیگنال هم‌خوان نیست.");
+    }
     els.matrixOutput.classList.remove("hidden");
 
     // Threat Level Badge Styling
@@ -45,7 +51,9 @@ export function renderMatrixResult(data) {
 
     // Sentiment & Confidence
     els.matrixSentiment.textContent = sentimentLabel(data.sentiment);
-    const confidence = Math.max(0, Math.min(100, Math.round(Number(data.confidenceScore) || 75)));
+    // A reported 0 is a real floor — only a missing/NaN score falls back to 75.
+    const rawScore = Number(data.confidenceScore);
+    const confidence = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, Math.round(rawScore))) : 75;
     els.matrixConfidenceVal.textContent = `${confidence}%`;
     els.matrixConfidenceBar.style.width = `${confidence}%`;
 
@@ -128,6 +136,8 @@ export async function handleMatrixSubmit(e) {
         } catch {
             throw new Error("مدل JSON معتبر برنگرداند. استخراج را دوباره تلاش کنید.");
         }
+        // renderMatrixResult validates the object shape and throws a Persian
+        // message when the payload cannot be rendered as a matrix.
         renderMatrixResult(parsed);
     } catch (err) {
         showError(`استخراج سیگنال ناموفق بود: ${err.message}`);

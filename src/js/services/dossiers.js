@@ -2,7 +2,9 @@
  * Local dossier archive (localStorage).
  *
  * Briefings can be saved for offline review. Storage is wrapped in try/catch
- * because Safari private mode and sandboxed iframes can throw on write.
+ * because Safari private mode and sandboxed iframes can throw on write — and
+ * because a failed write must not be reported as a save, `persistDossiers()`
+ * returns whether the data actually landed.
  */
 import { config } from "../config.js";
 import { els } from "../core/dom.js";
@@ -13,21 +15,45 @@ import { switchTab } from "../core/navigation.js";
 import { showToast } from "../core/toast.js";
 import { formatNumber } from "../core/format.js";
 import { focusLabel } from "../core/labels.js";
+
+/** Whether a stored record looks like a dossier this app can render. */
+function isWellFormedDossier(entry) {
+    return Boolean(
+        entry && typeof entry === "object" && typeof entry.id === "string" && typeof entry.rawText === "string"
+    );
+}
+
 export function loadDossiers() {
     try {
         const raw = localStorage.getItem(config.storage.dossiers);
-        state.dossiers = raw ? JSON.parse(raw) : [];
+        const parsed = raw ? JSON.parse(raw) : [];
+        // Corrupt or hostile storage must never break the sidebar: accept only
+        // a well-formed array of dossier-shaped records.
+        state.dossiers = Array.isArray(parsed) ? parsed.filter(isWellFormedDossier) : [];
     } catch (_) {
         state.dossiers = [];
     }
     renderDossierList();
 }
 
+/**
+ * Writes the archive to localStorage.
+ *
+ * @returns {boolean} whether the write actually succeeded — Safari private
+ *   mode, sandboxed iframes and a full quota (≈5 MB) all throw, and callers
+ *   must not toast «ذخیره شد» over a lost dossier.
+ */
 export function persistDossiers() {
+    // Keep the most recent `dossierMax` entries: an unbounded archive would
+    // eventually hit the quota and start failing every save.
+    state.dossiers = state.dossiers.slice(0, config.limits.dossierMax);
+    let ok = false;
     try {
         localStorage.setItem(config.storage.dossiers, JSON.stringify(state.dossiers));
+        ok = true;
     } catch (_) {}
     renderDossierList();
+    return ok;
 }
 
 export function renderDossierList() {

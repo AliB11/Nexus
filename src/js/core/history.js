@@ -10,7 +10,12 @@
  * bounded. The array is mutated in place, never re-assigned, because
  * `state.chatHistory` is referenced directly by the outgoing payload.
  *
- * @template {{ role: string, parts: unknown[] }} T
+ * After trimming, any leading non-`user` turns are dropped as well. Without
+ * this, a history trimmed mid-pair starts with the assistant's reply — and the
+ * Gemini transport (`generateContent`) rejects a `contents` array whose first
+ * role is `model`, turning every later chat turn into a 400.
+ *
+ * @template {{ role: string, parts?: unknown[] }} T
  * @param {T[]} history
  * @param {number} maxMessages
  * @returns {T[]} the same array instance
@@ -22,5 +27,6 @@ export function trimChatHistory(history, maxMessages) {
     if (!Number.isFinite(limit) || limit <= 0) return history;
 
     while (history.length > limit) history.shift();
+    while (history.length > 0 && history[0].role !== "user") history.shift();
     return history;
 }

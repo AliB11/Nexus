@@ -19,7 +19,7 @@ wire contract stay Latin; everything an analyst reads is Farsi.
 [![License: MIT](https://img.shields.io/badge/license-MIT-cyan.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-22.x-339933.svg)](https://nodejs.org)
 [![Code style: Prettier](https://img.shields.io/badge/code_style-Prettier-ff69b4.svg)](https://prettier.io)
-[![Tests](https://img.shields.io/badge/tests-150%20passing-brightgreen.svg)](./tests)
+[![Tests](https://img.shields.io/badge/tests-157%20passing-brightgreen.svg)](./tests)
 [![No backend](https://img.shields.io/badge/architecture-static%20%2B%20client--side-blueviolet.svg)](./docs/ARCHITECTURE.md)
 
 **No backend · no bundler · no runtime dependencies · MIT licensed**

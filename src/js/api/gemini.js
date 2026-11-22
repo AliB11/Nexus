@@ -138,22 +138,29 @@ export function createGeminiClient(options = {}) {
  * @returns {object}
  */
 export function toGeminiRequest(request) {
-    const contents = (request.messages || []).map((turn) => ({
+    let turns = (request.messages || []).map((turn) => ({
         role: turn.role === "assistant" ? "model" : "user",
         parts: [{ text: turn.text }]
     }));
 
-    if (contents.length > 0 && request.images?.length) {
-        const last = contents[contents.length - 1];
-        if (last.role === "user") {
-            last.parts.push(
-                ...request.images.map((image) => ({ inlineData: { mimeType: image.mimeType, data: image.data } }))
-            );
-        }
+    // `generateContent` requires the conversation to open with a user turn; a
+    // history trimmed mid-pair (or built elsewhere) may start with the model's
+    // reply, which the API answers with a 400. Drop those leading turns here so
+    // the wire body is always valid, whatever the caller assembled.
+    while (turns.length > 0 && turns[0].role !== "user") turns = turns.slice(1);
+
+    // Images ride on the final user turn, mirroring the OpenAI mapper — a
+    // trailing assistant turn (unusual, but possible in a replayed history)
+    // must never swallow them silently.
+    const lastUserIndex = findLastUserIndex(turns);
+    if (lastUserIndex !== -1 && request.images?.length) {
+        turns[lastUserIndex].parts.push(
+            ...request.images.map((image) => ({ inlineData: { mimeType: image.mimeType, data: image.data } }))
+        );
     }
 
     /** @type {object} */
-    const body = { contents };
+    const body = { contents: turns };
     const generationConfig = {};
 
     if (request.system) body.systemInstruction = { parts: [{ text: request.system }] };
@@ -166,6 +173,17 @@ export function toGeminiRequest(request) {
     if (Object.keys(generationConfig).length > 0) body.generationConfig = generationConfig;
 
     return body;
+}
+
+/**
+ * @param {Array<{ role: string }>} contents Gemini-dialect contents.
+ * @returns {number} index of the last `user` turn, or -1 when there is none.
+ */
+function findLastUserIndex(contents) {
+    for (let i = contents.length - 1; i >= 0; i--) {
+        if (contents[i].role === "user") return i;
+    }
+    return -1;
 }
 
 /**
@@ -218,34 +236,47 @@ export function blockReason(result) {
 }
 /**
  * Extracts grounding citation sources from Gemini's groundingMetadata.
+ *
+ * Attributions frequently carry a URI with an empty `title` (the model cited a
+ * page without a headline); dropping those loses real citations, so an unnamed
+ * source falls back to its hostname.
  */
 export function extractSources(candidate) {
     const sources = [];
     const seen = new Set();
     const metadata = candidate?.groundingMetadata;
 
+    const collect = (web) => {
+        const uri = web?.uri;
+        if (!uri || seen.has(uri)) return;
+        const title = String(web.title || "").trim() || hostLabel(uri);
+        // No title and no parseable host (e.g. a bare "x"): not a citable source.
+        if (!title) return;
+        seen.add(uri);
+        sources.push({ uri, title });
+    };
+
     if (metadata?.groundingAttributions) {
-        for (const attr of metadata.groundingAttributions) {
-            const uri = attr.web?.uri;
-            const title = attr.web?.title;
-            if (uri && title && !seen.has(uri)) {
-                seen.add(uri);
-                sources.push({ uri, title });
-            }
-        }
+        for (const attr of metadata.groundingAttributions) collect(attr.web);
     }
 
     // Fallback support for groundingChunks if returned by API
     if (sources.length === 0 && metadata?.groundingChunks) {
-        for (const chunk of metadata.groundingChunks) {
-            const uri = chunk.web?.uri;
-            const title = chunk.web?.title;
-            if (uri && title && !seen.has(uri)) {
-                seen.add(uri);
-                sources.push({ uri, title });
-            }
-        }
+        for (const chunk of metadata.groundingChunks) collect(chunk.web);
     }
 
     return sources;
+}
+
+/**
+ * @param {string} uri
+ * @returns {string} the hostname for a parseable URL, or "" for anything else —
+ *   an unparseable URI with no title stays dropped, as before.
+ */
+function hostLabel(uri) {
+    try {
+        return new URL(uri).hostname;
+    } catch {
+        return "";
+    }
 }

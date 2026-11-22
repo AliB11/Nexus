@@ -46,9 +46,11 @@ export function startServer(options = {}) {
             const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
             const pathname = decodeURIComponent(url.pathname);
 
-            // Resolve inside `root` only — block ../ traversal.
+            // Resolve inside `root` only — block ../ traversal. The separator is
+            // appended so a sibling directory (e.g. `dist2` next to `dist`)
+            // cannot pass a bare startsWith prefix check.
             let filePath = path.resolve(root, `.${path.posix.normalize(pathname)}`);
-            if (!filePath.startsWith(root)) {
+            if (!filePath.startsWith(root + path.sep) && filePath !== root) {
                 res.writeHead(403).end("Forbidden");
                 return;
             }

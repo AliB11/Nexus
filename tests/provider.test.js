@@ -175,7 +175,11 @@ test("a structured request is mapped to the schema form of each protocol", async
     let calls = stubFetch(() => chatOk('{"headline":"x"}'));
     await provider.runRequest({ messages: [{ role: "user", text: "extract" }], jsonSchema: schema });
     assert.equal(calls[0].body.response_format.type, "json_schema");
-    assert.deepEqual(calls[0].body.response_format.json_schema.schema, schema);
+    // Strict mode closes objects; the rest of the schema passes through.
+    assert.deepEqual(calls[0].body.response_format.json_schema.schema, {
+        ...schema,
+        additionalProperties: false
+    });
 
     provider.resetModelClient();
     saveSettings({ provider: "google" });

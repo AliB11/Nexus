@@ -1,7 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { NexusApiError, blockReason, createGeminiClient, extractSources, firstText } from "../src/js/api/gemini.js";
+import {
+    NexusApiError,
+    blockReason,
+    createGeminiClient,
+    extractSources,
+    firstText,
+    toGeminiRequest
+} from "../src/js/api/gemini.js";
 import { registerAction } from "../src/js/core/bus.js";
 
 /**
@@ -213,4 +220,49 @@ test("hasKey and getModel reflect the injected providers", () => {
     key = "AIza";
     assert.equal(client.hasKey(), true);
     assert.equal(client.getModel(), "gemini-x");
+});
+
+test("extractSources names an untitled web citation after its host", () => {
+    // Gemini often cites a page with a URI but no headline; the citation is
+    // real, so it must survive with the hostname as its label.
+    const candidate = {
+        groundingMetadata: {
+            groundingAttributions: [
+                { web: { uri: "https://example.com/report", title: "" } },
+                { web: { uri: "https://news.example/a", title: "Named" } }
+            ]
+        }
+    };
+    assert.deepEqual(extractSources(candidate), [
+        { uri: "https://example.com/report", title: "example.com" },
+        { uri: "https://news.example/a", title: "Named" }
+    ]);
+});
+
+// ----------------------------------------------------------------- toGeminiRequest
+test("toGeminiRequest drops leading model turns so contents always opens with the user", () => {
+    const body = toGeminiRequest({
+        messages: [
+            { role: "assistant", text: "an earlier reply" },
+            { role: "user", text: "next question" }
+        ]
+    });
+    assert.deepEqual(body.contents, [{ role: "user", parts: [{ text: "next question" }] }]);
+});
+
+test("toGeminiRequest attaches images to the last user turn, not the last turn", () => {
+    const body = toGeminiRequest({
+        messages: [
+            { role: "user", text: "first" },
+            { role: "assistant", text: "reply" },
+            { role: "user", text: "look again" }
+        ],
+        images: [{ mimeType: "image/png", data: "QUJD" }]
+    });
+    assert.equal(body.contents.length, 3);
+    assert.deepEqual(body.contents[2].parts, [
+        { text: "look again" },
+        { inlineData: { mimeType: "image/png", data: "QUJD" } }
+    ]);
+    assert.equal(body.contents[0].parts.length, 1, "earlier turns stay text-only");
 });

@@ -45,6 +45,8 @@ const RESULT_STYLES = {
 };
 
 let lastFocused = null;
+/** The gateway the dialog is currently showing, saved or not. */
+let formProvider = null;
 
 /** Model ids offered before the live catalogue has been fetched. */
 let knownModels = [...(config.api.modelSuggestions || [])];
@@ -239,6 +241,7 @@ export function openSettingsDialog(options = {}) {
     lastFocused = document.activeElement;
     const injected = isKeyInjected();
     const provider = getProvider();
+    formProvider = provider;
 
     if (els.apiKeyProviderSelect) els.apiKeyProviderSelect.value = provider;
     renderProviderCopy(provider);
@@ -353,10 +356,15 @@ function saveFromDialog() {
  * Switching gateway resets the URL and model to that gateway's defaults — but
  * only when the current values still belong to the previous one, so a custom
  * proxy URL typed by hand is never thrown away.
+ *
+ * The comparison uses `formProvider` — the gateway the dialog is actually
+ * showing — not the persisted one. Otherwise switching A→B→A within one open
+ * dialog would early-return on the last change and leave B's URL and model
+ * sitting under A's label.
  */
 function handleProviderChange() {
     const next = els.apiKeyProviderSelect.value;
-    const previous = getProvider();
+    const previous = formProvider || getProvider();
     if (next === previous) return;
 
     renderProviderCopy(next);
@@ -369,6 +377,8 @@ function handleProviderChange() {
 
     if (!baseUrl || baseUrl === previousDefaults.baseUrl) els.apiKeyBaseUrlInput.value = nextDefaults.baseUrl;
     if (!model || model === previousDefaults.model) els.apiKeyModelInput.value = nextDefaults.model;
+
+    formProvider = next;
 }
 
 /**
@@ -399,9 +409,10 @@ export function initSettingsDialog() {
 
     byId("apiKeyModalBackdrop")?.addEventListener("click", closeSettingsDialog);
 
-    // Enter saves from any field, except the model field where it may be picking
-    // a suggestion from the datalist.
-    for (const field of [els.apiKeyInput, els.apiKeyBaseUrlInput, els.apiKeyModelInput]) {
+    // Enter saves from the key and URL fields. The model field is deliberately
+    // excluded: its datalist is open precisely when Enter is pressed, and
+    // saving mid-selection would close the dialog under the analyst's hand.
+    for (const field of [els.apiKeyInput, els.apiKeyBaseUrlInput]) {
         field?.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 event.preventDefault();
